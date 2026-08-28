@@ -1,268 +1,215 @@
-<!DOCTYPE html><html lang="hi"><head>
+<!DOCTYPE html><html lang="hi">
+<head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>HackerBook</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HackerBook</title>
+    <link rel="stylesheet" href="./style.css">
+</head><body><!-- LOGIN / REGISTER --><div id="authSection"><div class="card auth-card">
 
-<link rel="stylesheet" href="style.css">
+    <h1 class="brand-logo">HackerBook</h1>
+    <p class="brand-sub">Connect & Share with friends</p>
 
-</head><body><!-- ================= LOGIN / REGISTER ================= -->
+    <div id="authError" class="error hidden"></div>
 
-<div id="authSection">
+    <input
+        type="email"
+        id="authEmail"
+        placeholder="Email"
+    >
 
-    <div class="card auth-card">
+    <input
+        type="password"
+        id="authPassword"
+        placeholder="Password"
+    >
 
-        <h1 class="brand-logo">
-            HackerBook
-        </h1>
+    <button
+        id="loginBtn"
+        type="button"
+        class="btn btn-primary">
+        Log In
+    </button>
 
-        <p class="brand-sub">
-            Connect & Share with friends
-        </p>
+    <hr>
 
-        <div id="authError" class="error hidden"></div>
-
-        <input
-            type="email"
-            id="authEmail"
-            placeholder="Email"
-            autocomplete="email"
-        >
-
-        <input
-            type="password"
-            id="authPassword"
-            placeholder="Password"
-            autocomplete="current-password"
-        >
-
-        <button
-            id="loginBtn"
-            class="btn btn-primary"
-            type="button">
-            Log In
-        </button>
-
-        <hr>
-
-        <button
-            id="registerBtn"
-            class="btn btn-secondary"
-            type="button">
-            Create New Account
-        </button>
-
-    </div>
+    <button
+        id="registerBtn"
+        type="button"
+        class="btn btn-secondary">
+        Create New Account
+    </button>
 
 </div>
 
+</div><!-- MAIN APP --><div id="appSection" class="hidden"><header class="header">
 
-<!-- ================= MAIN APP ================= -->
+    <h1>HackerBook</h1>
 
-<div id="appSection" class="hidden">
+    <nav>
 
-    <!-- HEADER -->
+        <button id="navFeed" type="button">
+            🏠 Feed
+        </button>
 
-    <header class="header">
+        <button id="navUsers" type="button">
+            👥 Users
+        </button>
 
-        <h1>
-            HackerBook
-        </h1>
+        <button id="navChat" type="button">
+            💬 Chat
+        </button>
 
-        <nav>
+        <button id="logoutBtn" type="button">
+            Logout
+        </button>
+
+    </nav>
+
+</header>
+
+
+<main class="container">
+
+    <!-- FEED -->
+    <section id="feedView">
+
+        <div class="card">
+
+            <h2>Create Post</h2>
+
+            <textarea
+                id="postInput"
+                placeholder="What's on your mind?">
+            </textarea>
+
+            <div class="media-upload-options">
+
+                <label class="media-btn">
+
+                    📷 Photo / Video
+
+                    <input
+                        type="file"
+                        id="mediaInput"
+                        accept="image/*,video/*"
+                        hidden
+                    >
+
+                </label>
+
+                <span
+                    id="fileNameDisplay"
+                    class="file-name">
+                </span>
+
+            </div>
 
             <button
-                id="navFeed"
-                type="button">
-                🏠 Feed
+                id="postBtn"
+                type="button"
+                class="btn btn-primary">
+                Post
             </button>
 
-            <button
-                id="navUsers"
-                type="button">
+        </div>
+
+        <div id="postsContainer"></div>
+
+    </section>
+
+
+    <!-- USERS -->
+    <section
+        id="usersView"
+        class="hidden">
+
+        <div class="card">
+
+            <h2 class="section-title">
                 👥 Users
-            </button>
+            </h2>
 
-            <button
-                id="navChat"
-                type="button">
-                💬 Chat
-            </button>
+            <p class="sub-text">
+                Find people and follow them.
+            </p>
 
-            <button
-                id="logoutBtn"
-                type="button">
-                Logout
-            </button>
+            <div id="allUsersContainer"></div>
 
-        </nav>
+        </div>
 
-    </header>
+    </section>
 
 
-    <!-- ================= CONTENT ================= -->
+    <!-- CHAT -->
+    <section
+        id="chatView"
+        class="hidden">
 
-    <main class="container">
+        <div
+            id="userListCard"
+            class="card">
+
+            <h2 class="section-title">
+                💬 Messages
+            </h2>
+
+            <p class="sub-text">
+                Chat with your friends.
+            </p>
+
+            <div id="friendsContainer"></div>
+
+        </div>
 
 
-        <!-- FEED -->
+        <div
+            id="activeChatCard"
+            class="card hidden">
 
-        <section id="feedView">
+            <div class="chat-header">
 
-            <div class="card">
-
-                <h2>
-                    Create Post
-                </h2>
-
-                <textarea
-                    id="postInput"
-                    placeholder="What's on your mind?"
-                ></textarea>
-
-                <div class="media-upload-options">
-
-                    <label class="media-btn">
-
-                        📷 Photo / Video
-
-                        <input
-                            type="file"
-                            id="mediaInput"
-                            accept="image/*,video/*"
-                            hidden
-                        >
-
-                    </label>
-
-                    <span
-                        id="fileNameDisplay"
-                        class="file-name">
-                    </span>
-
-                </div>
+                <h3 id="chatWithTitle">
+                    Chat
+                </h3>
 
                 <button
-                    id="postBtn"
-                    class="btn btn-primary"
+                    id="backChatBtn"
                     type="button">
-                    Post
+                    ← Back
                 </button>
 
             </div>
 
-
-            <div id="postsContainer"></div>
-
-        </section>
-
-
-        <!-- USERS -->
-
-        <section
-            id="usersView"
-            class="hidden">
-
-            <div class="card">
-
-                <h2 class="section-title">
-                    👥 Users
-                </h2>
-
-                <p class="sub-text">
-                    Find people and follow them.
-                </p>
-
-                <div id="allUsersContainer"></div>
-
-            </div>
-
-        </section>
-
-
-        <!-- CHAT -->
-
-        <section
-            id="chatView"
-            class="hidden">
-
-
-            <!-- FRIEND LIST -->
-
             <div
-                id="userListCard"
-                class="card">
+                id="chatBox"
+                class="chat-box">
+            </div>
 
-                <h2 class="section-title">
-                    💬 Messages
-                </h2>
+            <div class="chat-input">
 
-                <p class="sub-text">
-                    Chat with your friends.
-                </p>
+                <input
+                    type="text"
+                    id="chatInput"
+                    placeholder="Type a message..."
+                >
 
-                <div id="friendsContainer"></div>
+                <button
+                    id="sendBtn"
+                    type="button"
+                    class="btn btn-primary">
+                    Send
+                </button>
 
             </div>
 
+        </div>
 
-            <!-- ACTIVE CHAT -->
+    </section>
 
-            <div
-                id="activeChatCard"
-                class="card hidden">
+</main>
 
-                <div class="chat-header">
-
-                    <h3 id="chatWithTitle">
-                        Chat
-                    </h3>
-
-                    <button
-                        id="backChatBtn"
-                        type="button">
-                        ← Back
-                    </button>
-
-                </div>
-
-
-                <div
-                    id="chatBox"
-                    class="chat-box">
-                </div>
-
-
-                <div class="chat-input">
-
-                    <input
-                        type="text"
-                        id="chatInput"
-                        placeholder="Type a message..."
-                        autocomplete="off"
-                    >
-
-                    <button
-                        id="sendBtn"
-                        class="btn btn-primary"
-                        type="button">
-                        Send
-                    </button>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
-
-</div>
-
-
-<!-- ================= JAVASCRIPT ================= -->
-
-<script
+</div><!-- IMPORTANT --><script
     type="module"
-    src="input.js">
-</script>
-
-</body></html>
+    src="./input.js">
+</script></body>
+</html>
