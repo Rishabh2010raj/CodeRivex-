@@ -2,11 +2,13 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+  Roboto, Arial, sans-serif;
   }
 
 body {
 background: #f0f2f5;
+color: #050505;
 padding-bottom: 50px;
 }
 
@@ -26,7 +28,7 @@ align-items: center;
 position: sticky;
 top: 0;
 z-index: 100;
-box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 .header h1 {
@@ -34,29 +36,29 @@ font-size: 22px;
 font-weight: bold;
 }
 
-nav {
+.header nav {
 display: flex;
-gap: 5px;
+gap: 6px;
 align-items: center;
 }
 
-nav button {
+.header nav button {
 border: none;
-background: rgba(255,255,255,0.2);
+background: rgba(255, 255, 255, 0.2);
 color: white;
 padding: 7px 10px;
 border-radius: 20px;
 cursor: pointer;
 font-size: 13px;
-font-weight: 500;
+font-weight: 600;
 }
 
-nav button:hover {
+.header nav button:hover {
 background: white;
 color: #1877f2;
 }
 
-/* ================= MAIN ================= */
+/* ================= MAIN CONTAINER ================= */
 
 .container {
 max-width: 600px;
@@ -71,10 +73,10 @@ background: white;
 border-radius: 9px;
 padding: 15px;
 margin-bottom: 15px;
-box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-/* ================= LOGIN ================= */
+/* ================= AUTH ================= */
 
 .auth-card {
 max-width: 380px;
@@ -96,9 +98,12 @@ font-size: 14px;
 
 .error {
 color: #d93025;
-font-size: 14px;
+background: #fff0f0;
+border-radius: 6px;
+padding: 8px;
 margin-bottom: 10px;
-font-weight: bold;
+font-size: 14px;
+font-weight: 600;
 }
 
 /* ================= INPUTS ================= */
@@ -106,10 +111,10 @@ font-weight: bold;
 input,
 textarea {
 width: 100%;
-padding: 10px;
-margin: 6px 0;
 border: 1px solid #ddd;
 border-radius: 7px;
+padding: 10px;
+margin: 6px 0;
 font-size: 15px;
 outline: none;
 background: white;
@@ -118,6 +123,7 @@ background: white;
 input:focus,
 textarea:focus {
 border-color: #1877f2;
+box-shadow: 0 0 0 1px #1877f2;
 }
 
 textarea {
@@ -197,7 +203,7 @@ white-space: nowrap;
 text-overflow: ellipsis;
 }
 
-/* ================= POSTS ================= */
+/* ================= POST ================= */
 
 .post-author {
 font-size: 15px;
@@ -220,27 +226,14 @@ white-space: pre-wrap;
 word-break: break-word;
 }
 
-.post-media {
-display: block;
-width: 100%;
-max-height: 450px;
-object-fit: cover;
-border-radius: 8px;
-margin-bottom: 10px;
-}
-
-video.post-media {
-background: black;
-}
-
-/* ================= POST ACTIONS ================= */
-
 .post-actions {
 border-top: 1px solid #e4e6eb;
 border-bottom: 1px solid #e4e6eb;
 padding: 8px 0;
 margin-bottom: 10px;
 }
+
+/* ================= LIKE ================= */
 
 .like-btn {
 border: none;
@@ -318,6 +311,7 @@ margin-bottom: 15px;
 display: flex;
 justify-content: space-between;
 align-items: center;
+gap: 10px;
 padding: 10px 0;
 border-bottom: 1px solid #eee;
 }
@@ -335,6 +329,11 @@ padding: 7px 12px;
 border-radius: 5px;
 cursor: pointer;
 font-weight: bold;
+white-space: nowrap;
+}
+
+.follow-btn:hover {
+background: #166fe5;
 }
 
 .follow-btn.following {
@@ -407,6 +406,7 @@ margin: 0;
 .chat-input button {
 width: auto;
 padding: 0 18px;
+margin: 0;
 }
 
 /* ================= MOBILE ================= */
@@ -422,13 +422,13 @@ padding: 0 18px;
     font-size: 20px;
 }
 
-nav {
+.header nav {
     width: 100%;
     justify-content: center;
     flex-wrap: wrap;
 }
 
-nav button {
+.header nav button {
     font-size: 11px;
     padding: 7px 8px;
 }
@@ -441,12 +441,16 @@ nav button {
     margin: 40px 10px;
 }
 
-.post-media {
-    max-height: 400px;
-}
-
 .chat-box {
     height: 300px;
+}
+
+.user-row {
+    padding: 12px 0;
+}
+
+.msg {
+    max-width: 85%;
 }
 
 }
