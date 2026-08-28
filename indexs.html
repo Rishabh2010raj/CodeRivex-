@@ -1,0 +1,158 @@
+<!DOCTYPE html><html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HackerBook</title>
+    <link rel="stylesheet" href="style.css">
+</head><body><!-- LOGIN / REGISTER --><section id="authSection"><div class="card auth-card">
+
+    <h1 class="brand-logo">HackerBook</h1>
+    <p class="brand-sub">Connect • Share • Chat</p>
+
+    <p id="authError" class="error hidden"></p>
+
+    <input id="authUsername"
+           type="text"
+           placeholder="Username">
+
+    <input id="authPassword"
+           type="password"
+           placeholder="Password">
+
+    <button id="loginBtn" class="btn btn-primary">
+        Log In
+    </button>
+
+    <hr>
+
+    <button id="registerBtn" class="btn btn-secondary">
+        Create New Account
+    </button>
+
+</div>
+
+</section><!-- MAIN APP --><section id="appSection" class="hidden"><header class="header">
+
+    <h1>HackerBook</h1>
+
+    <nav>
+
+        <button id="navFeed">🏠 Feed</button>
+        <button id="navUsers">👥 Friends</button>
+        <button id="navChat">💬 Chat</button>
+        <button id="logoutBtn">Logout</button>
+
+    </nav>
+
+</header>
+
+
+<main class="container">
+
+    <!-- FEED -->
+    <section id="feedView">
+
+        <div class="card">
+
+            <textarea id="postInput"
+                placeholder="What's on your mind?"></textarea>
+
+            <label class="media-btn">
+
+                📷 Photo / Video
+
+                <input id="mediaInput"
+                       type="file"
+                       accept="image/*,video/*"
+                       hidden>
+
+            </label>
+
+            <span id="fileNameDisplay"></span>
+
+            <button id="postBtn"
+                    class="btn btn-primary">
+                Post
+            </button>
+
+        </div>
+
+        <div id="postsContainer"></div>
+
+    </section>
+
+
+    <!-- FRIENDS -->
+    <section id="usersView" class="hidden">
+
+        <div class="card">
+
+            <h2>👥 Friends</h2>
+
+            <p class="sub-text">
+                Users को Follow करें।
+            </p>
+
+            <div id="allUsersContainer"></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CHAT -->
+    <section id="chatView" class="hidden">
+
+        <div id="userListCard" class="card">
+
+            <h2>💬 Messages</h2>
+
+            <p class="sub-text">
+                Follow किए हुए users से chat करें।
+            </p>
+
+            <div id="friendsContainer"></div>
+
+        </div>
+
+
+        <div id="activeChatCard"
+             class="card hidden">
+
+            <div class="chat-header">
+
+                <h3 id="chatWithTitle">
+                    Chat
+                </h3>
+
+                <button id="backChatBtn">
+                    ← Back
+                </button>
+
+            </div>
+
+            <div id="chatBox"
+                 class="chat-box">
+            </div>
+
+            <div class="chat-input">
+
+                <input id="chatInput"
+                       type="text"
+                       placeholder="Type a message...">
+
+                <button id="sendBtn"
+                        class="btn btn-primary">
+                    Send
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+</section><script src="input.js"></script></body>
+</html>
