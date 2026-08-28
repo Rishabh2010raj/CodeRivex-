@@ -1,158 +1,360 @@
 <!DOCTYPE html><html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HackerBook</title>
-    <link rel="stylesheet" href="style.css">
-</head><body><!-- LOGIN / REGISTER --><section id="authSection"><div class="card auth-card">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>HackerBook - Social, Reels & Chat</title>
 
-    <h1 class="brand-logo">HackerBook</h1>
-    <p class="brand-sub">Connect • Share • Chat</p>
+<link rel="stylesheet" href="style.css">
 
-    <p id="authError" class="error hidden"></p>
+</head><body><!-- ================= AUTH SECTION ================= -->
 
-    <input id="authUsername"
-           type="text"
-           placeholder="Username">
+<div id="authSection">
 
-    <input id="authPassword"
-           type="password"
-           placeholder="Password">
+    <div class="card auth-card">
 
-    <button id="loginBtn" class="btn btn-primary">
-        Log In
-    </button>
+        <h1 class="brand-logo">
+            HackerBook
+        </h1>
 
-    <hr>
+        <p class="brand-sub">
+            Connect & Share with friends
+        </p>
 
-    <button id="registerBtn" class="btn btn-secondary">
-        Create New Account
-    </button>
+        <div id="authError"
+             class="error hidden">
+        </div>
+
+        <input
+            type="email"
+            id="authEmail"
+            placeholder="Email"
+            autocomplete="email"
+        >
+
+        <input
+            type="password"
+            id="authPassword"
+            placeholder="Password"
+            autocomplete="current-password"
+        >
+
+        <button
+            id="loginBtn"
+            class="btn btn-primary"
+            type="button">
+            Log In
+        </button>
+
+        <hr>
+
+        <button
+            id="registerBtn"
+            class="btn btn-secondary"
+            type="button">
+            Create New Account
+        </button>
+
+    </div>
 
 </div>
 
-</section><!-- MAIN APP --><section id="appSection" class="hidden"><header class="header">
 
-    <h1>HackerBook</h1>
+<!-- ================= MAIN APP ================= -->
 
-    <nav>
+<div id="appSection" class="hidden">
 
-        <button id="navFeed">🏠 Feed</button>
-        <button id="navUsers">👥 Friends</button>
-        <button id="navChat">💬 Chat</button>
-        <button id="logoutBtn">Logout</button>
+    <!-- HEADER -->
 
-    </nav>
+    <header class="header">
 
-</header>
+        <h1>
+            HackerBook
+        </h1>
 
+        <nav>
 
-<main class="container">
-
-    <!-- FEED -->
-    <section id="feedView">
-
-        <div class="card">
-
-            <textarea id="postInput"
-                placeholder="What's on your mind?"></textarea>
-
-            <label class="media-btn">
-
-                📷 Photo / Video
-
-                <input id="mediaInput"
-                       type="file"
-                       accept="image/*,video/*"
-                       hidden>
-
-            </label>
-
-            <span id="fileNameDisplay"></span>
-
-            <button id="postBtn"
-                    class="btn btn-primary">
-                Post
+            <button
+                id="navFeed"
+                type="button">
+                🏠 Feed
             </button>
 
-        </div>
+            <button
+                id="navUsers"
+                type="button">
+                👥 Users
+            </button>
 
-        <div id="postsContainer"></div>
+            <button
+                id="navChat"
+                type="button">
+                💬 Chat
+            </button>
 
-    </section>
+            <button
+                id="logoutBtn"
+                type="button">
+                Logout
+            </button>
 
+        </nav>
 
-    <!-- FRIENDS -->
-    <section id="usersView" class="hidden">
-
-        <div class="card">
-
-            <h2>👥 Friends</h2>
-
-            <p class="sub-text">
-                Users को Follow करें।
-            </p>
-
-            <div id="allUsersContainer"></div>
-
-        </div>
-
-    </section>
+    </header>
 
 
-    <!-- CHAT -->
-    <section id="chatView" class="hidden">
+    <!-- MAIN CONTAINER -->
 
-        <div id="userListCard" class="card">
-
-            <h2>💬 Messages</h2>
-
-            <p class="sub-text">
-                Follow किए हुए users से chat करें।
-            </p>
-
-            <div id="friendsContainer"></div>
-
-        </div>
+    <main class="container">
 
 
-        <div id="activeChatCard"
-             class="card hidden">
+        <!-- ================= FEED ================= -->
 
-            <div class="chat-header">
+        <section id="feedView">
 
-                <h3 id="chatWithTitle">
-                    Chat
-                </h3>
+            <!-- CREATE POST -->
 
-                <button id="backChatBtn">
-                    ← Back
+            <div class="card">
+
+                <h2>
+                    Create Post
+                </h2>
+
+                <textarea
+                    id="postInput"
+                    placeholder="What's on your mind?"
+                ></textarea>
+
+
+                <div class="media-upload-options">
+
+                    <label class="media-btn">
+
+                        📷 Photo / Video
+
+                        <input
+                            type="file"
+                            id="mediaInput"
+                            accept="image/*,video/*"
+                            hidden
+                        >
+
+                    </label>
+
+                    <span
+                        id="fileNameDisplay"
+                        class="file-name">
+                    </span>
+
+                </div>
+
+
+                <button
+                    id="postBtn"
+                    class="btn btn-primary"
+                    type="button">
+                    Post
                 </button>
 
             </div>
 
-            <div id="chatBox"
-                 class="chat-box">
+
+            <!-- POSTS -->
+
+            <div id="postsContainer">
             </div>
 
-            <div class="chat-input">
+        </section>
 
-                <input id="chatInput"
-                       type="text"
-                       placeholder="Type a message...">
 
-                <button id="sendBtn"
-                        class="btn btn-primary">
-                    Send
-                </button>
+        <!-- ================= USERS ================= -->
+
+        <section
+            id="usersView"
+            class="hidden">
+
+            <div class="card">
+
+                <h2 class="section-title">
+                    👥 Users
+                </h2>
+
+                <p class="sub-text">
+                    Find people and follow them.
+                </p>
+
+                <div id="allUsersContainer">
+                </div>
 
             </div>
 
-        </div>
+        </section>
 
-    </section>
 
-</main>
+        <!-- ================= CHAT ================= -->
 
-</section><script src="input.js"></script></body>
+        <section
+            id="chatView"
+            class="hidden">
+
+
+            <!-- FRIEND LIST -->
+
+            <div
+                id="userListCard"
+                class="card">
+
+                <h2 class="section-title">
+                    💬 Messages
+                </h2>
+
+                <p class="sub-text">
+                    Chat with your followers or people you follow.
+                </p>
+
+                <div id="friendsContainer">
+                </div>
+
+            </div>
+
+
+            <!-- ACTIVE CHAT -->
+
+            <div
+                id="activeChatCard"
+                class="card hidden">
+
+
+                <div class="chat-header">
+
+                    <h3 id="chatWithTitle">
+                        Chat
+                    </h3>
+
+                    <button
+                        id="backChatBtn"
+                        type="button">
+                        ← Back
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="chatBox"
+                    class="chat-box">
+                </div>
+
+
+                <div class="chat-input">
+
+                    <input
+                        type="text"
+                        id="chatInput"
+                        placeholder="Type a message..."
+                        autocomplete="off"
+                    >
+
+                    <button
+                        id="sendBtn"
+                        class="btn btn-primary"
+                        type="button">
+                        Send
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- ================= FIREBASE ================= -->
+
+<script type="module">
+
+    import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+    import {
+        getAuth
+    }
+    from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+    import {
+        getDatabase
+    }
+    from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+
+    const firebaseConfig = {
+
+        apiKey:
+            "AIzaSyBoU-pijNz9S-9v2OyLxArGYkZVtuc95fA",
+
+        authDomain:
+            "hacker-book.firebaseapp.com",
+
+        databaseURL:
+            "https://hacker-book-default-rtdb.firebaseio.com",
+
+        projectId:
+            "hacker-book",
+
+        storageBucket:
+            "hacker-book.firebasestorage.app",
+
+        messagingSenderId:
+            "341319299799",
+
+        appId:
+            "1:341319299799:web:77e386f68b153cc4e3f692",
+
+        measurementId:
+            "G-BL9YZRFJEM"
+    };
+
+
+    const app =
+        initializeApp(firebaseConfig);
+
+
+    const auth =
+        getAuth(app);
+
+
+    const database =
+        getDatabase(app);
+
+
+    /*
+     * input.js को Firebase objects
+     * उपलब्ध कराने के लिए window पर रख रहे हैं।
+     */
+
+    window.firebaseApp = app;
+
+    window.firebaseAuth = auth;
+
+    window.firebaseDB = database;
+
+
+    /*
+     * अब external input.js load होगा।
+     */
+
+    const script =
+        document.createElement("script");
+
+    script.src = "input.js";
+
+    script.type = "module";
+
+    document.body.appendChild(script);
+
+</script>
+
+</body>
 </html>
