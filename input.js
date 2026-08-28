@@ -1,187 +1,290 @@
-const DB_USERS = "hb_users";
-const DB_POSTS = "hb_posts";
-const DB_MESSAGES = "hb_messages";
-const DB_FOLLOWS = "hb_follows";
-const DB_SESSION = "hb_session";
+import {
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+onAuthStateChanged,
+signOut
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
-let currentUser = "";
+import {
+ref,
+set,
+push,
+get,
+onValue,
+update,
+remove
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+/* ================= VARIABLES ================= */
+
+const auth = window.firebaseAuth;
+const db = window.firebaseDB;
+
+let currentUser = null;
+let currentUsername = "";
 let activeChatReceiver = "";
+let activeChatUsername = "";
 
-/* ================= INITIALIZE ================= */
+let unsubscribePosts = null;
+let unsubscribeUsers = null;
+let unsubscribeMessages = null;
 
-document.addEventListener("DOMContentLoaded", function () {
+/* ================= ELEMENTS ================= */
 
-currentUser = localStorage.getItem(DB_SESSION) || "";
+const authSection =
+document.getElementById("authSection");
 
-document.getElementById("loginBtn")
-    .addEventListener("click", loginUser);
+const appSection =
+document.getElementById("appSection");
 
-document.getElementById("registerBtn")
-    .addEventListener("click", registerUser);
+const authEmail =
+document.getElementById("authEmail");
 
-document.getElementById("logoutBtn")
-    .addEventListener("click", logout);
+const authPassword =
+document.getElementById("authPassword");
 
-document.getElementById("navFeed")
-    .addEventListener("click", () => switchTab("feed"));
+const authError =
+document.getElementById("authError");
 
-document.getElementById("navUsers")
-    .addEventListener("click", () => switchTab("users"));
+/* ================= AUTH STATE ================= */
 
-document.getElementById("navChat")
-    .addEventListener("click", () => switchTab("chat"));
+onAuthStateChanged(auth, async (user) => {
 
-document.getElementById("postBtn")
-    .addEventListener("click", createPost);
+if (user) {
 
-document.getElementById("sendBtn")
-    .addEventListener("click", sendMessage);
+    currentUser = user;
 
-document.getElementById("backChatBtn")
-    .addEventListener("click", closeChat);
+    const usernameSnap =
+        await get(
+            ref(
+                db,
+                "users/" + user.uid + "/username"
+            )
+        );
 
-document.getElementById("mediaInput")
-    .addEventListener("change", function () {
+    if (usernameSnap.exists()) {
 
-        const file = this.files[0];
+        currentUsername =
+            usernameSnap.val();
 
-        document.getElementById("fileNameDisplay")
-            .textContent = file ? file.name : "";
-    });
+    } else {
 
-if (currentUser) {
-    showApp();
-}
+        currentUsername =
+            user.email.split("@")[0];
 
-});
+    }
 
-/* ================= AUTH ================= */
-
-function loginUser() {
-
-const username =
-    document.getElementById("authUsername")
-    .value.trim();
-
-const password =
-    document.getElementById("authPassword")
-    .value.trim();
-
-if (!username || !password) {
-    showError("Username और Password भरें!");
-    return;
-}
-
-const users =
-    JSON.parse(localStorage.getItem(DB_USERS)) || {};
-
-if (users[username] === password) {
-
-    currentUser = username;
-
-    localStorage.setItem(
-        DB_SESSION,
-        currentUser
-    );
-
-    hideError();
     showApp();
 
 } else {
 
-    showError("गलत Username या Password!");
+    currentUser = null;
+    currentUsername = "";
+
+    showLogin();
 
 }
 
-}
+});
 
-function registerUser() {
+/* ================= LOGIN ================= */
 
-const username =
-    document.getElementById("authUsername")
-    .value.trim();
+async function loginUser() {
+
+const email =
+    authEmail.value.trim();
 
 const password =
-    document.getElementById("authPassword")
-    .value.trim();
+    authPassword.value.trim();
 
-if (!username || !password) {
-    showError("Username और Password भरें!");
-    return;
-}
 
-const users =
-    JSON.parse(localStorage.getItem(DB_USERS)) || {};
-
-if (users[username]) {
+if (!email || !password) {
 
     showError(
-        "यह Username पहले से मौजूद है!"
+        "Email और Password भरें!"
     );
 
     return;
 }
 
-users[username] = password;
 
-localStorage.setItem(
-    DB_USERS,
-    JSON.stringify(users)
-);
+try {
 
-currentUser = username;
+    await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+    );
 
-localStorage.setItem(
-    DB_SESSION,
-    currentUser
-);
+    hideError();
 
-hideError();
-showApp();
+} catch (error) {
 
-}
-
-function showError(message) {
-
-const error =
-    document.getElementById("authError");
-
-error.textContent = message;
-error.classList.remove("hidden");
+    showError(
+        firebaseError(error.code)
+    );
 
 }
 
-function hideError() {
+}
 
-document.getElementById("authError")
-    .classList.add("hidden");
+/* ================= REGISTER ================= */
+
+async function registerUser() {
+
+const email =
+    authEmail.value.trim();
+
+const password =
+    authPassword.value.trim();
+
+
+if (!email || !password) {
+
+    showError(
+        "Email और Password भरें!"
+    );
+
+    return;
+}
+
+
+if (password.length < 6) {
+
+    showError(
+        "Password कम से कम 6 characters का होना चाहिए!"
+    );
+
+    return;
+}
+
+
+try {
+
+    const result =
+        await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
+
+
+    const username =
+        email.split("@")[0];
+
+
+    await set(
+        ref(
+            db,
+            "users/" + result.user.uid
+        ),
+        {
+
+            uid: result.user.uid,
+
+            username: username,
+
+            email: email,
+
+            createdAt: Date.now()
+
+        }
+    );
+
+
+    hideError();
+
+} catch (error) {
+
+    showError(
+        firebaseError(error.code)
+    );
 
 }
 
-function logout() {
+}
 
-localStorage.removeItem(DB_SESSION);
+/* ================= LOGOUT ================= */
 
-currentUser = "";
+async function logout() {
+
+if (unsubscribePosts)
+    unsubscribePosts();
+
+if (unsubscribeUsers)
+    unsubscribeUsers();
+
+if (unsubscribeMessages)
+    unsubscribeMessages();
+
+
+await signOut(auth);
+
 activeChatReceiver = "";
 
-document.getElementById("appSection")
-    .classList.add("hidden");
+}
 
-document.getElementById("authSection")
-    .classList.remove("hidden");
+/* ================= AUTH UI ================= */
+
+function showLogin() {
+
+authSection.classList.remove("hidden");
+
+appSection.classList.add("hidden");
 
 }
 
 function showApp() {
 
-document.getElementById("authSection")
-    .classList.add("hidden");
+authSection.classList.add("hidden");
 
-document.getElementById("appSection")
-    .classList.remove("hidden");
+appSection.classList.remove("hidden");
 
 switchTab("feed");
+
+}
+
+function showError(message) {
+
+authError.textContent = message;
+
+authError.classList.remove("hidden");
+
+}
+
+function hideError() {
+
+authError.classList.add("hidden");
+
+}
+
+/* ================= ERROR MESSAGES ================= */
+
+function firebaseError(code) {
+
+switch (code) {
+
+    case "auth/invalid-email":
+        return "Email सही नहीं है!";
+
+    case "auth/user-not-found":
+        return "यह account मौजूद नहीं है!";
+
+    case "auth/wrong-password":
+        return "Password गलत है!";
+
+    case "auth/invalid-credential":
+        return "Email या Password गलत है!";
+
+    case "auth/email-already-in-use":
+        return "यह Email पहले से registered है!";
+
+    case "auth/weak-password":
+        return "Password बहुत कमजोर है!";
+
+    default:
+        return "Error: " + code;
+}
 
 }
 
@@ -189,94 +292,82 @@ switchTab("feed");
 
 function switchTab(tab) {
 
-document.getElementById("feedView")
+document
+    .getElementById("feedView")
     .classList.add("hidden");
 
-document.getElementById("usersView")
+document
+    .getElementById("usersView")
     .classList.add("hidden");
 
-document.getElementById("chatView")
+document
+    .getElementById("chatView")
     .classList.add("hidden");
 
 
 if (tab === "feed") {
 
-    document.getElementById("feedView")
+    document
+        .getElementById("feedView")
         .classList.remove("hidden");
 
-    renderPosts();
+    listenPosts();
 
 }
+
 
 if (tab === "users") {
 
-    document.getElementById("usersView")
+    document
+        .getElementById("usersView")
         .classList.remove("hidden");
 
-    renderUsers();
+    listenUsers();
 
 }
+
 
 if (tab === "chat") {
 
-    document.getElementById("chatView")
+    document
+        .getElementById("chatView")
         .classList.remove("hidden");
 
     closeChat();
-    renderFriends();
+
+    listenFriends();
 
 }
-
-}
-
-/* ================= FOLLOW ================= */
-
-function toggleFollow(user) {
-
-let follows =
-    JSON.parse(
-        localStorage.getItem(DB_FOLLOWS)
-    ) || {};
-
-if (!follows[currentUser]) {
-    follows[currentUser] = [];
-}
-
-const list = follows[currentUser];
-
-const index = list.indexOf(user);
-
-if (index === -1) {
-    list.push(user);
-} else {
-    list.splice(index, 1);
-}
-
-localStorage.setItem(
-    DB_FOLLOWS,
-    JSON.stringify(follows)
-);
-
-renderUsers();
 
 }
 
 /* ================= USERS ================= */
 
-function renderUsers() {
+function listenUsers() {
 
-const users =
-    JSON.parse(
-        localStorage.getItem(DB_USERS)
-    ) || {};
+const usersRef =
+    ref(db, "users");
 
-const follows =
-    JSON.parse(
-        localStorage.getItem(DB_FOLLOWS)
-    ) || {};
 
-const following =
-    follows[currentUser] || [];
+if (unsubscribeUsers)
+    unsubscribeUsers();
+
+
+unsubscribeUsers =
+    onValue(
+        usersRef,
+        (snapshot) => {
+
+            renderUsers(
+                snapshot.val() || {}
+            );
+
+        }
+    );
+
+}
+
+function renderUsers(users) {
 
 const container =
     document.getElementById(
@@ -285,77 +376,223 @@ const container =
 
 container.innerHTML = "";
 
-const others =
-    Object.keys(users)
-    .filter(user => user !== currentUser);
+
+Object.entries(users).forEach(
+    ([uid, user]) => {
+
+        if (uid === currentUser.uid)
+            return;
 
 
-if (others.length === 0) {
+        const row =
+            document.createElement("div");
+
+        row.className =
+            "user-row";
+
+
+        const name =
+            document.createElement("span");
+
+        name.className =
+            "user-name";
+
+        name.textContent =
+            "👤 @" + user.username;
+
+
+        const button =
+            document.createElement("button");
+
+        button.className =
+            "follow-btn";
+
+        button.textContent =
+            "Loading...";
+
+
+        row.appendChild(name);
+
+        row.appendChild(button);
+
+        container.appendChild(row);
+
+
+        checkFollowing(
+            uid,
+            button
+        );
+
+    }
+);
+
+
+if (
+    container.children.length === 0
+) {
 
     container.innerHTML =
         "<p>अभी कोई दूसरा user नहीं है।</p>";
 
-    return;
 }
 
+}
 
-others.forEach(user => {
+/* ================= FOLLOW ================= */
 
-    const row =
-        document.createElement("div");
+async function checkFollowing(
+targetUid,
+button
+) {
 
-    row.className = "user-row";
-
-
-    const name =
-        document.createElement("b");
-
-    name.textContent = "👤 @" + user;
-
-
-    const button =
-        document.createElement("button");
-
-    const followingNow =
-        following.includes(user);
-
-    button.className =
-        "follow-btn" +
-        (followingNow ? " liked" : "");
-
-    button.textContent =
-        followingNow
-            ? "✔ Following"
-            : "+ Follow";
-
-
-    button.addEventListener(
-        "click",
-        () => toggleFollow(user)
+const followRef =
+    ref(
+        db,
+        "follows/" +
+        currentUser.uid +
+        "/" +
+        targetUid
     );
 
 
-    row.appendChild(name);
-    row.appendChild(button);
+const snapshot =
+    await get(followRef);
 
-    container.appendChild(row);
 
-});
+updateFollowButton(
+    button,
+    snapshot.exists()
+);
+
+
+button.onclick =
+    () => toggleFollow(
+        targetUid,
+        button
+    );
+
+}
+
+function updateFollowButton(
+button,
+following
+) {
+
+button.textContent =
+    following
+        ? "✔ Following"
+        : "+ Follow";
+
+
+button.classList.toggle(
+    "following",
+    following
+);
+
+}
+
+async function toggleFollow(
+targetUid,
+button
+) {
+
+const followRef =
+    ref(
+        db,
+        "follows/" +
+        currentUser.uid +
+        "/" +
+        targetUid
+    );
+
+
+const snapshot =
+    await get(followRef);
+
+
+if (snapshot.exists()) {
+
+    await remove(followRef);
+
+    updateFollowButton(
+        button,
+        false
+    );
+
+} else {
+
+    await set(
+        followRef,
+        true
+    );
+
+    updateFollowButton(
+        button,
+        true
+    );
+}
 
 }
 
 /* ================= POSTS ================= */
 
-function createPost() {
+function listenPosts() {
+
+const postsRef =
+    ref(db, "posts");
+
+
+if (unsubscribePosts)
+    unsubscribePosts();
+
+
+unsubscribePosts =
+    onValue(
+        postsRef,
+        snapshot => {
+
+            const data =
+                snapshot.val() || {};
+
+
+            const posts =
+                Object.entries(data)
+                .map(
+                    ([id, post]) => ({
+                        id,
+                        ...post
+                    })
+                )
+                .sort(
+                    (a, b) =>
+                        (b.createdAt || 0) -
+                        (a.createdAt || 0)
+                );
+
+
+            renderPosts(posts);
+
+        }
+    );
+
+}
+
+async function createPost() {
 
 const text =
-    document.getElementById("postInput")
-    .value.trim();
+    document
+        .getElementById("postInput")
+        .value
+        .trim();
+
 
 const fileInput =
-    document.getElementById("mediaInput");
+    document.getElementById(
+        "mediaInput"
+    );
 
-const file = fileInput.files[0];
+const file =
+    fileInput.files[0];
 
 
 if (!text && !file) {
@@ -368,185 +605,56 @@ if (!text && !file) {
 }
 
 
+/*
+ * इस basic Firebase version में
+ * text posts सीधे database में जाते हैं।
+ */
+
 if (file) {
 
-    const reader =
-        new FileReader();
-
-    reader.onload = function (event) {
-
-        const mediaType =
-            file.type.startsWith("video")
-                ? "video"
-                : "image";
-
-        savePost(
-            text,
-            event.target.result,
-            mediaType
-        );
-
-    };
-
-    reader.readAsDataURL(file);
-
-} else {
-
-    savePost(text, null, null);
-
-}
-
-}
-
-function savePost(
-text,
-mediaData,
-mediaType
-) {
-
-const posts =
-    JSON.parse(
-        localStorage.getItem(DB_POSTS)
-    ) || [];
-
-
-posts.unshift({
-
-    id: Date.now(),
-
-    author: currentUser,
-
-    content: text,
-
-    mediaData: mediaData,
-
-    mediaType: mediaType,
-
-    time: new Date()
-        .toLocaleTimeString(),
-
-    likes: [],
-
-    comments: []
-
-});
-
-
-localStorage.setItem(
-    DB_POSTS,
-    JSON.stringify(posts)
-);
-
-
-document.getElementById("postInput")
-    .value = "";
-
-document.getElementById("mediaInput")
-    .value = "";
-
-document.getElementById("fileNameDisplay")
-    .textContent = "";
-
-
-renderPosts();
-
-}
-
-/* ================= LIKE ================= */
-
-function toggleLike(postId) {
-
-const posts =
-    JSON.parse(
-        localStorage.getItem(DB_POSTS)
-    ) || [];
-
-
-const post =
-    posts.find(p => p.id === postId);
-
-if (!post) return;
-
-
-const index =
-    post.likes.indexOf(currentUser);
-
-
-if (index === -1) {
-
-    post.likes.push(currentUser);
-
-} else {
-
-    post.likes.splice(index, 1);
-
-}
-
-
-localStorage.setItem(
-    DB_POSTS,
-    JSON.stringify(posts)
-);
-
-renderPosts();
-
-}
-
-/* ================= COMMENT ================= */
-
-function addComment(postId) {
-
-const input =
-    document.getElementById(
-        "comment-" + postId
+    alert(
+        "Photo/Video upload के लिए Firebase Storage भी enable करना होगा। अभी Text Post इस्तेमाल करें।"
     );
 
-const text =
-    input.value.trim();
-
-if (!text) return;
+    return;
+}
 
 
-const posts =
-    JSON.parse(
-        localStorage.getItem(DB_POSTS)
-    ) || [];
+const postRef =
+    push(ref(db, "posts"));
 
 
-const post =
-    posts.find(p => p.id === postId);
+await set(
+    postRef,
+    {
 
-if (!post) return;
+        authorUid:
+            currentUser.uid,
 
+        author:
+            currentUsername,
 
-post.comments.push({
+        content:
+            text,
 
-    author: currentUser,
+        createdAt:
+            Date.now(),
 
-    text: text
+        likes: {},
 
-});
+        comments: {}
 
-
-localStorage.setItem(
-    DB_POSTS,
-    JSON.stringify(posts)
+    }
 );
 
 
-renderPosts();
+document
+    .getElementById("postInput")
+    .value = "";
 
 }
 
-/* ================= RENDER POSTS ================= */
-
-function renderPosts() {
-
-const posts =
-    JSON.parse(
-        localStorage.getItem(DB_POSTS)
-    ) || [];
-
+function renderPosts(posts) {
 
 const container =
     document.getElementById(
@@ -573,7 +681,8 @@ posts.forEach(post => {
     const card =
         document.createElement("div");
 
-    card.className = "card";
+    card.className =
+        "card";
 
 
     const author =
@@ -593,54 +702,29 @@ posts.forEach(post => {
         "post-time";
 
     time.textContent =
-        post.time;
+        new Date(
+            post.createdAt
+        ).toLocaleString();
+
+
+    const content =
+        document.createElement("div");
+
+    content.className =
+        "post-content";
+
+    content.textContent =
+        post.content || "";
 
 
     card.appendChild(author);
+
     card.appendChild(time);
 
-
-    if (post.content) {
-
-        const content =
-            document.createElement("div");
-
-        content.className =
-            "post-content";
-
-        content.textContent =
-            post.content;
-
-        card.appendChild(content);
-    }
+    card.appendChild(content);
 
 
-    if (post.mediaData) {
-
-        let media;
-
-        if (post.mediaType === "video") {
-
-            media =
-                document.createElement("video");
-
-            media.controls = true;
-
-        } else {
-
-            media =
-                document.createElement("img");
-        }
-
-
-        media.src = post.mediaData;
-
-        media.className =
-            "post-media";
-
-        card.appendChild(media);
-    }
-
+    /* LIKE */
 
     const actions =
         document.createElement("div");
@@ -649,91 +733,119 @@ posts.forEach(post => {
         "post-actions";
 
 
-    const like =
+    const likeButton =
         document.createElement("button");
 
-    like.className = "like-btn";
+    likeButton.className =
+        "like-btn";
 
 
-    if (
-        post.likes.includes(currentUser)
-    ) {
-
-        like.classList.add("liked");
-
-    }
+    const likes =
+        post.likes || {};
 
 
-    like.textContent =
+    const liked =
+        likes[currentUser.uid];
+
+
+    if (liked)
+        likeButton.classList.add("liked");
+
+
+    likeButton.textContent =
         "👍 Like (" +
-        post.likes.length +
+        Object.keys(likes).length +
         ")";
 
 
-    like.addEventListener(
-        "click",
-        () => toggleLike(post.id)
+    likeButton.onclick =
+        () =>
+            toggleLike(
+                post.id,
+                liked
+            );
+
+
+    actions.appendChild(
+        likeButton
     );
-
-
-    actions.appendChild(like);
 
     card.appendChild(actions);
 
 
     /* COMMENTS */
 
-    const commentsBox =
+    const commentBox =
         document.createElement("div");
 
-
-    post.comments.forEach(comment => {
-
-        const item =
-            document.createElement("p");
-
-        item.innerHTML =
-            "<b>@" +
-            escapeHTML(comment.author) +
-            ":</b> " +
-            escapeHTML(comment.text);
-
-        commentsBox.appendChild(item);
-
-    });
+    commentBox.className =
+        "comment-box";
 
 
-    const commentInput =
+    const comments =
+        post.comments || {};
+
+
+    Object.values(comments)
+        .forEach(comment => {
+
+            const item =
+                document.createElement("div");
+
+            item.className =
+                "comment-item";
+
+            item.textContent =
+                "@" +
+                comment.author +
+                ": " +
+                comment.text;
+
+            commentBox.appendChild(item);
+
+        });
+
+
+    const inputArea =
+        document.createElement("div");
+
+    inputArea.className =
+        "comment-input-area";
+
+
+    const input =
         document.createElement("input");
 
-    commentInput.id =
-        "comment-" + post.id;
-
-    commentInput.placeholder =
+    input.placeholder =
         "Write a comment...";
 
 
-    const replyButton =
+    const reply =
         document.createElement("button");
 
-    replyButton.className =
+    reply.className =
         "reply-btn";
 
-    replyButton.textContent =
+    reply.textContent =
         "Reply";
 
 
-    replyButton.addEventListener(
-        "click",
-        () => addComment(post.id)
-    );
+    reply.onclick =
+        () =>
+            addComment(
+                post.id,
+                input
+            );
 
 
-    commentsBox.appendChild(commentInput);
+    inputArea.appendChild(input);
 
-    commentsBox.appendChild(replyButton);
+    inputArea.appendChild(reply);
 
-    card.appendChild(commentsBox);
+    commentBox.appendChild(inputArea);
+
+    card.appendChild(commentBox);
+
 
     container.appendChild(card);
 
@@ -741,43 +853,132 @@ posts.forEach(post => {
 
 }
 
-/* ================= CHAT ================= */
+/* ================= LIKE ================= */
 
-function renderFriends() {
+async function toggleLike(
+postId,
+liked
+) {
 
-const follows =
-    JSON.parse(
-        localStorage.getItem(DB_FOLLOWS)
-    ) || {};
+const likeRef =
+    ref(
+        db,
+        "posts/" +
+        postId +
+        "/likes/" +
+        currentUser.uid
+    );
 
 
-const following =
-    follows[currentUser] || [];
+if (liked) {
+
+    await remove(likeRef);
+
+} else {
+
+    await set(
+        likeRef,
+        true
+    );
+
+}
+
+}
+
+/* ================= COMMENT ================= */
+
+async function addComment(
+postId,
+input
+) {
+
+const text =
+    input.value.trim();
 
 
-const followers = [];
+if (!text)
+    return;
 
 
-Object.keys(follows).forEach(user => {
+const commentRef =
+    push(
+        ref(
+            db,
+            "posts/" +
+            postId +
+            "/comments"
+        )
+    );
 
-    if (
-        follows[user]
-        .includes(currentUser)
-    ) {
 
-        followers.push(user);
+await set(
+    commentRef,
+    {
+
+        author:
+            currentUsername,
+
+        authorUid:
+            currentUser.uid,
+
+        text:
+            text,
+
+        createdAt:
+            Date.now()
 
     }
+);
 
-});
+
+input.value = "";
+
+}
+
+/* ================= FRIENDS ================= */
+
+function listenFriends() {
+
+const followsRef =
+    ref(
+        db,
+        "follows/" +
+        currentUser.uid
+    );
 
 
-const friends =
-    [...new Set([
-        ...following,
-        ...followers
-    ])];
+onValue(
+    followsRef,
+    async snapshot => {
 
+        const following =
+            snapshot.val() || {};
+
+
+        const usersSnap =
+            await get(
+                ref(db, "users")
+            );
+
+
+        const users =
+            usersSnap.val() || {};
+
+
+        renderFriends(
+            following,
+            users
+        );
+
+    }
+);
+
+}
+
+function renderFriends(
+following,
+users
+) {
 
 const container =
     document.getElementById(
@@ -787,78 +988,102 @@ const container =
 container.innerHTML = "";
 
 
-if (friends.length === 0) {
+Object.keys(following)
+    .forEach(uid => {
+
+        if (!users[uid])
+            return;
+
+
+        const row =
+            document.createElement("div");
+
+        row.className =
+            "user-row";
+
+
+        const name =
+            document.createElement("b");
+
+        name.textContent =
+            "👤 @" +
+            users[uid].username;
+
+
+        const button =
+            document.createElement("button");
+
+        button.className =
+            "chat-btn";
+
+        button.textContent =
+            "Chat";
+
+
+        button.onclick =
+            () =>
+                openChat(
+                    uid,
+                    users[uid].username
+                );
+
+
+        row.appendChild(name);
+
+        row.appendChild(button);
+
+        container.appendChild(row);
+
+    });
+
+
+if (!container.children.length) {
 
     container.innerHTML =
-        "<p>पहले किसी user को Follow करें।</p>";
-
-    return;
-}
-
-
-friends.forEach(user => {
-
-    const row =
-        document.createElement("div");
-
-    row.className =
-        "user-row";
-
-
-    const name =
-        document.createElement("b");
-
-    name.textContent =
-        "👤 @" + user;
-
-
-    const button =
-        document.createElement("button");
-
-    button.className =
-        "chat-btn";
-
-    button.textContent =
-        "Chat";
-
-
-    button.addEventListener(
-        "click",
-        () => openChat(user)
-    );
-
-
-    row.appendChild(name);
-    row.appendChild(button);
-
-    container.appendChild(row);
-
-});
+        "<p>किसी user को Follow करें, फिर Chat कर सकते हैं।</p>";
 
 }
 
-function openChat(user) {
+}
 
-activeChatReceiver = user;
+/* ================= CHAT ================= */
 
+function openChat(
+uid,
+username
+) {
 
-document.getElementById(
-    "userListCard"
-).classList.add("hidden");
+activeChatReceiver =
+    uid;
 
-
-document.getElementById(
-    "activeChatCard"
-).classList.remove("hidden");
-
-
-document.getElementById(
-    "chatWithTitle"
-).textContent =
-    "Chat with @" + user;
+activeChatUsername =
+    username;
 
 
-renderMessages();
+document
+    .getElementById(
+        "userListCard"
+    )
+    .classList.add("hidden");
+
+
+document
+    .getElementById(
+        "activeChatCard"
+    )
+    .classList.remove("hidden");
+
+
+document
+    .getElementById(
+        "chatWithTitle"
+    )
+    .textContent =
+    "Chat with @" +
+    username;
+
+
+listenMessages();
 
 }
 
@@ -866,95 +1091,106 @@ function closeChat() {
 
 activeChatReceiver = "";
 
+document
+    .getElementById(
+        "activeChatCard"
+    )
+    .classList.add("hidden");
 
-document.getElementById(
-    "activeChatCard"
-).classList.add("hidden");
+
+document
+    .getElementById(
+        "userListCard"
+    )
+    .classList.remove("hidden");
 
 
-document.getElementById(
-    "userListCard"
-).classList.remove("hidden");
+if (unsubscribeMessages) {
+
+    unsubscribeMessages();
+
+    unsubscribeMessages = null;
 
 }
 
-function sendMessage() {
+}
 
-const input =
-    document.getElementById("chatInput");
+/* ================= MESSAGES ================= */
 
-const text =
-    input.value.trim();
+function getChatId(
+uid1,
+uid2
+) {
 
+return [uid1, uid2]
+    .sort()
+    .join("_");
 
-if (!text || !activeChatReceiver)
+}
+
+function listenMessages() {
+
+if (!activeChatReceiver)
     return;
 
 
-const messages =
-    JSON.parse(
-        localStorage.getItem(DB_MESSAGES)
-    ) || [];
+const chatId =
+    getChatId(
+        currentUser.uid,
+        activeChatReceiver
+    );
 
 
-messages.push({
-
-    sender: currentUser,
-
-    receiver: activeChatReceiver,
-
-    text: text,
-
-    time: Date.now()
-
-});
+const messagesRef =
+    ref(
+        db,
+        "messages/" +
+        chatId
+    );
 
 
-localStorage.setItem(
-    DB_MESSAGES,
-    JSON.stringify(messages)
-);
+if (unsubscribeMessages)
+    unsubscribeMessages();
 
 
-input.value = "";
+unsubscribeMessages =
+    onValue(
+        messagesRef,
+        snapshot => {
 
-renderMessages();
+            const data =
+                snapshot.val() || {};
+
+
+            const messages =
+                Object.values(data)
+                .sort(
+                    (a, b) =>
+                        (a.createdAt || 0) -
+                        (b.createdAt || 0)
+                );
+
+
+            renderMessages(
+                messages
+            );
+
+        }
+    );
 
 }
 
-function renderMessages() {
-
-const messages =
-    JSON.parse(
-        localStorage.getItem(DB_MESSAGES)
-    ) || [];
-
+function renderMessages(messages) {
 
 const box =
-    document.getElementById("chatBox");
+    document.getElementById(
+        "chatBox"
+    );
 
 box.innerHTML = "";
 
 
-const relevant =
-    messages.filter(message =>
-
-        (
-            message.sender === currentUser &&
-            message.receiver === activeChatReceiver
-        )
-
-        ||
-
-        (
-            message.sender === activeChatReceiver &&
-            message.receiver === currentUser
-        )
-
-    );
-
-
-if (relevant.length === 0) {
+if (!messages.length) {
 
     box.innerHTML =
         `<div style="text-align:center;color:#65676b">
@@ -965,7 +1201,7 @@ if (relevant.length === 0) {
 }
 
 
-relevant.forEach(message => {
+messages.forEach(message => {
 
     const div =
         document.createElement("div");
@@ -974,7 +1210,8 @@ relevant.forEach(message => {
     div.className =
         "msg " +
         (
-            message.sender === currentUser
+            message.senderUid ===
+            currentUser.uid
                 ? "sent"
                 : "received"
         );
@@ -994,15 +1231,88 @@ box.scrollTop =
 
 }
 
-/* ================= HTML SECURITY ================= */
+async function sendMessage() {
 
-function escapeHTML(text) {
+const input =
+    document.getElementById(
+        "chatInput"
+    );
 
-const div =
-    document.createElement("div");
 
-div.textContent = text;
+const text =
+    input.value.trim();
 
-return div.innerHTML;
+
+if (
+    !text ||
+    !activeChatReceiver
+)
+    return;
+
+
+const chatId =
+    getChatId(
+        currentUser.uid,
+        activeChatReceiver
+    );
+
+
+const messageRef =
+    push(
+        ref(
+            db,
+            "messages/" +
+            chatId
+        )
+    );
+
+
+await set(
+    messageRef,
+    {
+
+        senderUid:
+            currentUser.uid,
+
+        sender:
+            currentUsername,
+
+        receiverUid:
+            activeChatReceiver,
+
+        text:
+            text,
+
+        createdAt:
+            Date.now()
+
+    }
+);
+
+
+input.value = "";
 
 }
+
+/* ================= FILE NAME ================= */
+
+document
+.getElementById("mediaInput")
+.addEventListener(
+"change",
+function () {
+
+        const file =
+            this.files[0];
+
+        document
+            .getElementById(
+                "fileNameDisplay"
+            )
+            .textContent =
+            file
+                ? file.name
+                : "";
+
+    }
+);
