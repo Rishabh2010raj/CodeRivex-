@@ -1,11 +1,10 @@
-<!DOCTYPE html><html lang="hi">
-<head>
+<!DOCTYPE html><html lang="hi"><head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>HackerBook - Social, Reels & Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>HackerBook</title>
 
 <link rel="stylesheet" href="style.css">
 
-</head><body><!-- ================= AUTH SECTION ================= -->
+</head><body><!-- ================= LOGIN / REGISTER ================= -->
 
 <div id="authSection">
 
@@ -19,9 +18,7 @@
             Connect & Share with friends
         </p>
 
-        <div id="authError"
-             class="error hidden">
-        </div>
+        <div id="authError" class="error hidden"></div>
 
         <input
             type="email"
@@ -101,16 +98,14 @@
     </header>
 
 
-    <!-- MAIN CONTAINER -->
+    <!-- ================= CONTENT ================= -->
 
     <main class="container">
 
 
-        <!-- ================= FEED ================= -->
+        <!-- FEED -->
 
         <section id="feedView">
-
-            <!-- CREATE POST -->
 
             <div class="card">
 
@@ -122,7 +117,6 @@
                     id="postInput"
                     placeholder="What's on your mind?"
                 ></textarea>
-
 
                 <div class="media-upload-options">
 
@@ -146,7 +140,6 @@
 
                 </div>
 
-
                 <button
                     id="postBtn"
                     class="btn btn-primary"
@@ -157,15 +150,12 @@
             </div>
 
 
-            <!-- POSTS -->
-
-            <div id="postsContainer">
-            </div>
+            <div id="postsContainer"></div>
 
         </section>
 
 
-        <!-- ================= USERS ================= -->
+        <!-- USERS -->
 
         <section
             id="usersView"
@@ -181,15 +171,14 @@
                     Find people and follow them.
                 </p>
 
-                <div id="allUsersContainer">
-                </div>
+                <div id="allUsersContainer"></div>
 
             </div>
 
         </section>
 
 
-        <!-- ================= CHAT ================= -->
+        <!-- CHAT -->
 
         <section
             id="chatView"
@@ -207,11 +196,10 @@
                 </h2>
 
                 <p class="sub-text">
-                    Chat with your followers or people you follow.
+                    Chat with your friends.
                 </p>
 
-                <div id="friendsContainer">
-                </div>
+                <div id="friendsContainer"></div>
 
             </div>
 
@@ -221,7 +209,6 @@
             <div
                 id="activeChatCard"
                 class="card hidden">
-
 
                 <div class="chat-header">
 
@@ -271,90 +258,11 @@
 </div>
 
 
-<!-- ================= FIREBASE ================= -->
+<!-- ================= JAVASCRIPT ================= -->
 
-<script type="module">
-
-    import { initializeApp }
-    from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-    import {
-        getAuth
-    }
-    from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-    import {
-        getDatabase
-    }
-    from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-
-
-    const firebaseConfig = {
-
-        apiKey:
-            "AIzaSyBoU-pijNz9S-9v2OyLxArGYkZVtuc95fA",
-
-        authDomain:
-            "hacker-book.firebaseapp.com",
-
-        databaseURL:
-            "https://hacker-book-default-rtdb.firebaseio.com",
-
-        projectId:
-            "hacker-book",
-
-        storageBucket:
-            "hacker-book.firebasestorage.app",
-
-        messagingSenderId:
-            "341319299799",
-
-        appId:
-            "1:341319299799:web:77e386f68b153cc4e3f692",
-
-        measurementId:
-            "G-BL9YZRFJEM"
-    };
-
-
-    const app =
-        initializeApp(firebaseConfig);
-
-
-    const auth =
-        getAuth(app);
-
-
-    const database =
-        getDatabase(app);
-
-
-    /*
-     * input.js को Firebase objects
-     * उपलब्ध कराने के लिए window पर रख रहे हैं।
-     */
-
-    window.firebaseApp = app;
-
-    window.firebaseAuth = auth;
-
-    window.firebaseDB = database;
-
-
-    /*
-     * अब external input.js load होगा।
-     */
-
-    const script =
-        document.createElement("script");
-
-    script.src = "input.js";
-
-    script.type = "module";
-
-    document.body.appendChild(script);
-
+<script
+    type="module"
+    src="input.js">
 </script>
 
-</body>
-</html>
+</body></html>
