@@ -1,7 +1,5 @@
-alert("JavaScript चालू है!");
-import {
-initializeApp
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
 import {
 getAuth,
@@ -9,7 +7,8 @@ createUserWithEmailAndPassword,
 signInWithEmailAndPassword,
 onAuthStateChanged,
 signOut
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
 getDatabase,
@@ -19,11 +18,10 @@ push,
 get,
 onValue,
 remove
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-/* =====================================================
-FIREBASE CONFIG
-===================================================== */
+/* ================= FIREBASE ================= */
 
 const firebaseConfig = {
 
@@ -53,152 +51,115 @@ measurementId:
 
 };
 
-/* =====================================================
-INITIALIZE FIREBASE
-===================================================== */
+const app =
+initializeApp(firebaseConfig);
 
-const app = initializeApp(firebaseConfig);
+const auth =
+getAuth(app);
 
-const auth = getAuth(app);
+const db =
+getDatabase(app);
 
-const db = getDatabase(app);
-
-/* =====================================================
-GLOBAL VARIABLES
-===================================================== */
+/* ================= VARIABLES ================= */
 
 let currentUser = null;
-
 let currentUsername = "";
-
 let activeChatReceiver = "";
 
 let postsListener = null;
-
 let usersListener = null;
-
 let messagesListener = null;
 
-/* =====================================================
-PAGE LOAD
-===================================================== */
+/* ================= PAGE READY ================= */
 
 document.addEventListener(
 "DOMContentLoaded",
 () => {
 
-    setupButtons();
+    document
+        .getElementById("loginBtn")
+        .addEventListener(
+            "click",
+            loginUser
+        );
+
+
+    document
+        .getElementById("registerBtn")
+        .addEventListener(
+            "click",
+            registerUser
+        );
+
+
+    document
+        .getElementById("logoutBtn")
+        .addEventListener(
+            "click",
+            logout
+        );
+
+
+    document
+        .getElementById("navFeed")
+        .addEventListener(
+            "click",
+            () => switchTab("feed")
+        );
+
+
+    document
+        .getElementById("navUsers")
+        .addEventListener(
+            "click",
+            () => switchTab("users")
+        );
+
+
+    document
+        .getElementById("navChat")
+        .addEventListener(
+            "click",
+            () => switchTab("chat")
+        );
+
+
+    document
+        .getElementById("postBtn")
+        .addEventListener(
+            "click",
+            createPost
+        );
+
+
+    document
+        .getElementById("sendBtn")
+        .addEventListener(
+            "click",
+            sendMessage
+        );
+
+
+    document
+        .getElementById("backChatBtn")
+        .addEventListener(
+            "click",
+            closeChat
+        );
+
+
+    document
+        .getElementById("mediaInput")
+        .addEventListener(
+            "change",
+            showFileName
+        );
 
 }
 
 );
 
-/* =====================================================
-BUTTON SETUP
-===================================================== */
-
-function setupButtons() {
-
-document
-    .getElementById("loginBtn")
-    .addEventListener(
-        "click",
-        loginUser
-    );
-
-
-document
-    .getElementById("registerBtn")
-    .addEventListener(
-        "click",
-        registerUser
-    );
-
-
-document
-    .getElementById("logoutBtn")
-    .addEventListener(
-        "click",
-        logout
-    );
-
-
-document
-    .getElementById("navFeed")
-    .addEventListener(
-        "click",
-        () => switchTab("feed")
-    );
-
-
-document
-    .getElementById("navUsers")
-    .addEventListener(
-        "click",
-        () => switchTab("users")
-    );
-
-
-document
-    .getElementById("navChat")
-    .addEventListener(
-        "click",
-        () => switchTab("chat")
-    );
-
-
-document
-    .getElementById("postBtn")
-    .addEventListener(
-        "click",
-        createPost
-    );
-
-
-document
-    .getElementById("sendBtn")
-    .addEventListener(
-        "click",
-        sendMessage
-    );
-
-
-document
-    .getElementById("backChatBtn")
-    .addEventListener(
-        "click",
-        closeChat
-    );
-
-
-document
-    .getElementById("chatInput")
-    .addEventListener(
-        "keydown",
-        event => {
-
-            if (event.key === "Enter") {
-
-                sendMessage();
-
-            }
-
-        }
-    );
-
-
-document
-    .getElementById("mediaInput")
-    .addEventListener(
-        "change",
-        showFileName
-    );
-
-}
-
-/* =====================================================
-LOGIN
-===================================================== */
+/* ================= LOGIN ================= */
 
 async function loginUser() {
 
@@ -217,7 +178,7 @@ const password =
 if (!email || !password) {
 
     showError(
-        "Email और Password दोनों भरें!"
+        "Email और Password भरें!"
     );
 
     return;
@@ -234,19 +195,18 @@ try {
 
     hideError();
 
-} catch (error) {
+}
+catch (error) {
 
     showError(
-        getErrorMessage(error.code)
+        firebaseError(error.code)
     );
 
 }
 
 }
 
-/* =====================================================
-REGISTER
-===================================================== */
+/* ================= CREATE ACCOUNT ================= */
 
 async function registerUser() {
 
@@ -265,7 +225,7 @@ const password =
 if (!email || !password) {
 
     showError(
-        "Email और Password दोनों भरें!"
+        "Email और Password भरें!"
     );
 
     return;
@@ -295,7 +255,10 @@ try {
     const username =
         email
             .split("@")[0]
-            .replace(/[^a-zA-Z0-9_]/g, "");
+            .replace(
+                /[^a-zA-Z0-9_]/g,
+                ""
+            );
 
 
     await set(
@@ -324,79 +287,24 @@ try {
 
     hideError();
 
-} catch (error) {
+}
+catch (error) {
 
     showError(
-        getErrorMessage(error.code)
+        firebaseError(error.code)
     );
 
 }
 
 }
 
-/* =====================================================
-AUTH STATE
-===================================================== */
+/* ================= AUTH STATE ================= */
 
 onAuthStateChanged(
 auth,
 async user => {
 
-    if (user) {
-
-        currentUser = user;
-
-
-        const usernameSnapshot =
-            await get(
-                ref(
-                    db,
-                    "users/" +
-                    user.uid +
-                    "/username"
-                )
-            );
-
-
-        if (
-            usernameSnapshot.exists()
-        ) {
-
-            currentUsername =
-                usernameSnapshot.val();
-
-        } else {
-
-            currentUsername =
-                user.email
-                    .split("@")[0];
-
-        }
-
-
-        document
-            .getElementById(
-                "authSection"
-            )
-            .classList
-            .add("hidden");
-
-
-        document
-            .getElementById(
-                "appSection"
-            )
-            .classList
-            .remove("hidden");
-
-
-        switchTab("feed");
-
-    } else {
-
-        currentUser = null;
-
-        currentUsername = "";
+    if (!user) {
 
         document
             .getElementById(
@@ -412,56 +320,82 @@ async user => {
             )
             .classList
             .add("hidden");
+
+        return;
+    }
+
+
+    currentUser = user;
+
+
+    const snap =
+        await get(
+            ref(
+                db,
+                "users/" +
+                user.uid +
+                "/username"
+            )
+        );
+
+
+    if (snap.exists()) {
+
+        currentUsername =
+            snap.val();
 
     }
+    else {
+
+        currentUsername =
+            user.email.split("@")[0];
+
+    }
+
+
+    document
+        .getElementById(
+            "authSection"
+        )
+        .classList
+        .add("hidden");
+
+
+    document
+        .getElementById(
+            "appSection"
+        )
+        .classList
+        .remove("hidden");
+
+
+    switchTab("feed");
 
 }
 
 );
 
-/* =====================================================
-LOGOUT
-===================================================== */
+/* ================= LOGOUT ================= */
 
 async function logout() {
-
-if (postsListener)
-    postsListener();
-
-if (usersListener)
-    usersListener();
-
-if (messagesListener)
-    messagesListener();
-
-
-postsListener = null;
-
-usersListener = null;
-
-messagesListener = null;
-
-activeChatReceiver = "";
 
 await signOut(auth);
 
 }
 
-/* =====================================================
-ERROR
-===================================================== */
+/* ================= ERROR ================= */
 
-function showError(message) {
+function showError(text) {
 
-const error =
+const box =
     document.getElementById(
         "authError"
     );
 
-error.textContent =
-    message;
+box.textContent =
+    text;
 
-error.classList.remove(
+box.classList.remove(
     "hidden"
 );
 
@@ -478,40 +412,43 @@ document
 
 }
 
-function getErrorMessage(code) {
+function firebaseError(code) {
 
-switch (code) {
+if (
+    code ===
+    "auth/invalid-email"
+)
+    return "Email गलत है!";
 
-    case "auth/invalid-email":
-        return "Email गलत है!";
+if (
+    code ===
+    "auth/invalid-credential"
+)
+    return "Email या Password गलत है!";
 
-    case "auth/user-not-found":
-        return "यह account नहीं मिला!";
+if (
+    code ===
+    "auth/email-already-in-use"
+)
+    return "यह Email पहले से registered है!";
 
-    case "auth/wrong-password":
-        return "Password गलत है!";
+if (
+    code ===
+    "auth/weak-password"
+)
+    return "Password कम से कम 6 characters का रखें!";
 
-    case "auth/invalid-credential":
-        return "Email या Password गलत है!";
+if (
+    code ===
+    "auth/network-request-failed"
+)
+    return "Internet connection check करें!";
 
-    case "auth/email-already-in-use":
-        return "यह Email पहले से registered है!";
+return "Error: " + code;
 
-    case "auth/weak-password":
-        return "Password कम से कम 6 characters का रखें!";
-
-    case "auth/network-request-failed":
-        return "Internet connection check करें!";
-
-    default:
-        return "Error: " + code;
 }
 
-}
-
-/* =====================================================
-TABS
-===================================================== */
+/* ================= TABS ================= */
 
 function switchTab(tab) {
 
@@ -520,12 +457,10 @@ document
     .classList
     .add("hidden");
 
-
 document
     .getElementById("usersView")
     .classList
     .add("hidden");
-
 
 document
     .getElementById("chatView")
@@ -564,226 +499,13 @@ if (tab === "chat") {
         .classList
         .remove("hidden");
 
-    closeChat();
-
     listenFriends();
 
 }
 
 }
 
-/* =====================================================
-USERS
-===================================================== */
-
-function listenUsers() {
-
-const usersRef =
-    ref(db, "users");
-
-
-if (usersListener)
-    usersListener();
-
-
-usersListener =
-    onValue(
-        usersRef,
-        snapshot => {
-
-            renderUsers(
-                snapshot.val() || {}
-            );
-
-        }
-    );
-
-}
-
-async function renderUsers(users) {
-
-const container =
-    document.getElementById(
-        "allUsersContainer"
-    );
-
-container.innerHTML = "";
-
-
-const userEntries =
-    Object.entries(users);
-
-
-for (
-    const [uid, user]
-    of userEntries
-) {
-
-    if (
-        !currentUser ||
-        uid === currentUser.uid
-    ) {
-        continue;
-    }
-
-
-    const row =
-        document.createElement(
-            "div"
-        );
-
-    row.className =
-        "user-row";
-
-
-    const name =
-        document.createElement(
-            "span"
-        );
-
-    name.className =
-        "user-name";
-
-    name.textContent =
-        "👤 @" +
-        user.username;
-
-
-    const button =
-        document.createElement(
-            "button"
-        );
-
-    button.className =
-        "follow-btn";
-
-    button.textContent =
-        "Loading...";
-
-
-    row.appendChild(name);
-
-    row.appendChild(button);
-
-    container.appendChild(row);
-
-
-    const followRef =
-        ref(
-            db,
-            "follows/" +
-            currentUser.uid +
-            "/" +
-            uid
-        );
-
-
-    const followSnapshot =
-        await get(followRef);
-
-
-    const following =
-        followSnapshot.exists();
-
-
-    updateFollowButton(
-        button,
-        following
-    );
-
-
-    button.addEventListener(
-        "click",
-        () =>
-            toggleFollow(
-                uid,
-                button
-            )
-    );
-
-}
-
-
-if (
-    container.children.length === 0
-) {
-
-    container.innerHTML =
-        "<p>अभी कोई दूसरा user नहीं है।</p>";
-
-}
-
-}
-
-/* =====================================================
-FOLLOW
-===================================================== */
-
-async function toggleFollow(
-targetUid,
-button
-) {
-
-const followRef =
-    ref(
-        db,
-        "follows/" +
-        currentUser.uid +
-        "/" +
-        targetUid
-    );
-
-
-const snapshot =
-    await get(followRef);
-
-
-if (snapshot.exists()) {
-
-    await remove(followRef);
-
-    updateFollowButton(
-        button,
-        false
-    );
-
-} else {
-
-    await set(
-        followRef,
-        true
-    );
-
-    updateFollowButton(
-        button,
-        true
-    );
-
-}
-
-}
-
-function updateFollowButton(
-button,
-following
-) {
-
-button.textContent =
-    following
-        ? "✔ Following"
-        : "+ Follow";
-
-
-button.classList.toggle(
-    "following",
-    following
-);
-
-}
-
-/* =====================================================
-POSTS - REALTIME
-===================================================== */
+/* ================= POSTS ================= */
 
 function listenPosts() {
 
@@ -826,9 +548,7 @@ postsListener =
 
 }
 
-/* =====================================================
-CREATE POST
-===================================================== */
+/* ================= CREATE POST ================= */
 
 async function createPost() {
 
@@ -842,30 +562,10 @@ const text =
     input.value.trim();
 
 
-const fileInput =
-    document.getElementById(
-        "mediaInput"
-    );
-
-
-const file =
-    fileInput.files[0];
-
-
-if (!text && !file) {
+if (!text) {
 
     alert(
-        "कुछ लिखें या Photo/Video select करें!"
-    );
-
-    return;
-}
-
-
-if (file) {
-
-    alert(
-        "अभी Text Post इस्तेमाल करें। Photo/Video के लिए Firebase Storage जोड़ना होगा।"
+        "पहले कुछ लिखें!"
     );
 
     return;
@@ -884,11 +584,11 @@ try {
         postRef,
         {
 
-            authorUid:
-                currentUser.uid,
-
             author:
                 currentUsername,
+
+            authorUid:
+                currentUser.uid,
 
             content:
                 text,
@@ -896,11 +596,9 @@ try {
             createdAt:
                 Date.now(),
 
-            likes:
-                {},
+            likes: {},
 
-            comments:
-                {}
+            comments: {}
 
         }
     );
@@ -908,10 +606,10 @@ try {
 
     input.value = "";
 
-} catch (error) {
+}
+catch (error) {
 
     alert(
-        "Post बनाने में problem: " +
         error.message
     );
 
@@ -919,9 +617,7 @@ try {
 
 }
 
-/* =====================================================
-RENDER POSTS
-===================================================== */
+/* ================= RENDER POSTS ================= */
 
 function renderPosts(posts) {
 
@@ -938,8 +634,7 @@ if (posts.length === 0) {
 
     container.innerHTML =
         `
-        <div class="card"
-             style="text-align:center;color:#65676b">
+        <div class="card">
             अभी कोई post नहीं है 🚀
         </div>
         `;
@@ -959,8 +654,6 @@ posts.forEach(post => {
         "card";
 
 
-    /* AUTHOR */
-
     const author =
         document.createElement(
             "div"
@@ -970,11 +663,8 @@ posts.forEach(post => {
         "post-author";
 
     author.textContent =
-        "@" +
-        post.author;
+        "@" + post.author;
 
-
-    /* TIME */
 
     const time =
         document.createElement(
@@ -990,8 +680,6 @@ posts.forEach(post => {
         ).toLocaleString();
 
 
-    /* CONTENT */
-
     const content =
         document.createElement(
             "div"
@@ -1001,17 +689,76 @@ posts.forEach(post => {
         "post-content";
 
     content.textContent =
-        post.content || "";
+        post.content;
 
 
     card.appendChild(author);
-
     card.appendChild(time);
-
     card.appendChild(content);
 
 
-    /* ACTIONS */
+    const likes =
+        post.likes || {};
+
+
+    const likeBtn =
+        document.createElement(
+            "button"
+        );
+
+    likeBtn.className =
+        "like-btn";
+
+    likeBtn.textContent =
+        "👍 Like (" +
+        Object.keys(likes).length +
+        ")";
+
+
+    if (
+        likes[currentUser.uid]
+    ) {
+
+        likeBtn.classList.add(
+            "liked"
+        );
+
+    }
+
+
+    likeBtn.onclick =
+        async () => {
+
+            const likeRef =
+                ref(
+                    db,
+                    "posts/" +
+                    post.id +
+                    "/likes/" +
+                    currentUser.uid
+                );
+
+
+            if (
+                likes[currentUser.uid]
+            ) {
+
+                await remove(
+                    likeRef
+                );
+
+            }
+            else {
+
+                await set(
+                    likeRef,
+                    true
+                );
+
+            }
+
+        };
+
 
     const actions =
         document.createElement(
@@ -1021,158 +768,12 @@ posts.forEach(post => {
     actions.className =
         "post-actions";
 
-
-    const likeButton =
-        document.createElement(
-            "button"
-        );
-
-    likeButton.className =
-        "like-btn";
-
-
-    const likes =
-        post.likes || {};
-
-
-    const isLiked =
-        !!likes[currentUser.uid];
-
-
-    if (isLiked) {
-
-        likeButton.classList.add(
-            "liked"
-        );
-
-    }
-
-
-    likeButton.textContent =
-        "👍 Like (" +
-        Object.keys(likes).length +
-        ")";
-
-
-    likeButton.addEventListener(
-        "click",
-        () =>
-            toggleLike(
-                post.id,
-                isLiked
-            )
-    );
-
-
     actions.appendChild(
-        likeButton
+        likeBtn
     );
-
-    card.appendChild(actions);
-
-
-    /* COMMENTS */
-
-    const commentBox =
-        document.createElement(
-            "div"
-        );
-
-    commentBox.className =
-        "comment-box";
-
-
-    const comments =
-        post.comments || {};
-
-
-    Object.values(comments)
-        .sort(
-            (a, b) =>
-                (a.createdAt || 0) -
-                (b.createdAt || 0)
-        )
-        .forEach(
-            comment => {
-
-                const item =
-                    document.createElement(
-                        "div"
-                    );
-
-                item.className =
-                    "comment-item";
-
-                item.textContent =
-                    "@" +
-                    comment.author +
-                    ": " +
-                    comment.text;
-
-                commentBox.appendChild(
-                    item
-                );
-
-            }
-        );
-
-
-    const commentArea =
-        document.createElement(
-            "div"
-        );
-
-    commentArea.className =
-        "comment-input-area";
-
-
-    const commentInput =
-        document.createElement(
-            "input"
-        );
-
-    commentInput.placeholder =
-        "Write a comment...";
-
-
-    const replyButton =
-        document.createElement(
-            "button"
-        );
-
-    replyButton.className =
-        "reply-btn";
-
-    replyButton.textContent =
-        "Reply";
-
-
-    replyButton.addEventListener(
-        "click",
-        () =>
-            addComment(
-                post.id,
-                commentInput
-            )
-    );
-
-
-    commentArea.appendChild(
-        commentInput
-    );
-
-    commentArea.appendChild(
-        replyButton
-    );
-
-
-    commentBox.appendChild(
-        commentArea
-    );
-
 
     card.appendChild(
-        commentBox
+        actions
     );
 
 
@@ -1184,99 +785,182 @@ posts.forEach(post => {
 
 }
 
-/* =====================================================
-LIKE
-===================================================== */
+/* ================= USERS ================= */
 
-async function toggleLike(
-postId,
-isLiked
-) {
+function listenUsers() {
 
-const likeRef =
-    ref(
-        db,
-        "posts/" +
-        postId +
-        "/likes/" +
-        currentUser.uid
-    );
+const usersRef =
+    ref(db, "users");
 
 
-if (isLiked) {
+if (usersListener)
+    usersListener();
 
-    await remove(likeRef);
 
-} else {
+usersListener =
+    onValue(
+        usersRef,
+        snapshot => {
 
-    await set(
-        likeRef,
-        true
+            renderUsers(
+                snapshot.val() || {}
+            );
+
+        }
     );
 
 }
 
-}
+async function renderUsers(users) {
 
-/* =====================================================
-COMMENT
-===================================================== */
+const container =
+    document.getElementById(
+        "allUsersContainer"
+    );
 
-async function addComment(
-postId,
-input
+
+container.innerHTML = "";
+
+
+for (
+    const [uid, user]
+    of Object.entries(users)
 ) {
 
-const text =
-    input.value.trim();
+    if (
+        uid === currentUser.uid
+    )
+        continue;
 
 
-if (!text)
-    return;
+    const row =
+        document.createElement(
+            "div"
+        );
+
+    row.className =
+        "user-row";
 
 
-const commentRef =
-    push(
+    const name =
+        document.createElement(
+            "span"
+        );
+
+    name.textContent =
+        "👤 @" +
+        user.username;
+
+
+    const button =
+        document.createElement(
+            "button"
+        );
+
+    button.className =
+        "follow-btn";
+
+    button.textContent =
+        "Follow";
+
+
+    const followRef =
         ref(
             db,
-            "posts/" +
-            postId +
-            "/comments"
-        )
-    );
+            "follows/" +
+            currentUser.uid +
+            "/" +
+            uid
+        );
 
 
-await set(
-    commentRef,
-    {
+    const followSnap =
+        await get(followRef);
 
-        author:
-            currentUsername,
 
-        authorUid:
-            currentUser.uid,
+    if (
+        followSnap.exists()
+    ) {
 
-        text:
-            text,
+        button.textContent =
+            "✔ Following";
 
-        createdAt:
-            Date.now()
+        button.classList.add(
+            "following"
+        );
 
     }
-);
 
 
-input.value = "";
+    button.onclick =
+        async () => {
+
+            const snap =
+                await get(
+                    followRef
+                );
+
+
+            if (
+                snap.exists()
+            ) {
+
+                await remove(
+                    followRef
+                );
+
+                button.textContent =
+                    "Follow";
+
+                button.classList.remove(
+                    "following"
+                );
+
+            }
+            else {
+
+                await set(
+                    followRef,
+                    true
+                );
+
+                button.textContent =
+                    "✔ Following";
+
+                button.classList.add(
+                    "following"
+                );
+
+            }
+
+        };
+
+
+    row.appendChild(name);
+
+    row.appendChild(button);
+
+    container.appendChild(row);
 
 }
 
-/* =====================================================
-FRIENDS / CHAT USERS
-===================================================== */
+
+if (
+    container.children.length === 0
+) {
+
+    container.innerHTML =
+        "<p>अभी कोई दूसरा user नहीं है।</p>";
+
+}
+
+}
+
+/* ================= FRIENDS ================= */
 
 function listenFriends() {
 
-const followsRef =
+const followRef =
     ref(
         db,
         "follows/" +
@@ -1285,29 +969,22 @@ const followsRef =
 
 
 onValue(
-    followsRef,
+    followRef,
     async snapshot => {
 
         const following =
             snapshot.val() || {};
 
 
-        const usersSnapshot =
+        const usersSnap =
             await get(
-                ref(
-                    db,
-                    "users"
-                )
+                ref(db, "users")
             );
-
-
-        const users =
-            usersSnapshot.val() || {};
 
 
         renderFriends(
             following,
-            users
+            usersSnap.val() || {}
         );
 
     }
@@ -1330,30 +1007,314 @@ container.innerHTML = "";
 
 
 Object.keys(following)
-    .forEach(
-        uid => {
+    .forEach(uid => {
 
-            if (!users[uid])
-                return;
+        if (!users[uid])
+            return;
 
 
-            const row =
-                document.createElement(
-                    "div"
+        const row =
+            document.createElement(
+                "div"
+            );
+
+        row.className =
+            "user-row";
+
+
+        const name =
+            document.createElement(
+                "span"
+            );
+
+        name.textContent =
+            "👤 @" +
+            users[uid].username;
+
+
+        const button =
+            document.createElement(
+                "button"
+            );
+
+        button.className =
+            "follow-btn";
+
+        button.textContent =
+            "Chat";
+
+
+        button.onclick =
+            () =>
+                openChat(
+                    uid,
+                    users[uid].username
                 );
 
-            row.className =
-                "user-row";
+
+        row.appendChild(name);
+
+        row.appendChild(button);
+
+        container.appendChild(row);
+
+    });
 
 
-            const name =
-                document.createElement(
-                    "span"
-                );
+if (
+    container.children.length === 0
+) {
 
-            name.className =
-                "user-name";
+    container.innerHTML =
+        "<p>पहले किसी user को Follow करें।</p>";
 
-            name.textContent =
-                "👤 @" +
-                users[uid].u
+}
+
+}
+
+/* ================= CHAT ================= */
+
+function openChat(
+uid,
+username
+) {
+
+activeChatReceiver =
+    uid;
+
+
+document
+    .getElementById(
+        "userListCard"
+    )
+    .classList
+    .add("hidden");
+
+
+document
+    .getElementById(
+        "activeChatCard"
+    )
+    .classList
+    .remove("hidden");
+
+
+document
+    .getElementById(
+        "chatWithTitle"
+    )
+    .textContent =
+    "Chat with @" +
+    username;
+
+
+listenMessages();
+
+}
+
+function closeChat() {
+
+activeChatReceiver = "";
+
+
+document
+    .getElementById(
+        "activeChatCard"
+    )
+    .classList
+    .add("hidden");
+
+
+document
+    .getElementById(
+        "userListCard"
+    )
+    .classList
+    .remove("hidden");
+
+
+if (messagesListener) {
+
+    messagesListener();
+
+    messagesListener = null;
+
+}
+
+}
+
+function chatId(a, b) {
+
+return [a, b]
+    .sort()
+    .join("_");
+
+}
+
+function listenMessages() {
+
+const id =
+    chatId(
+        currentUser.uid,
+        activeChatReceiver
+    );
+
+
+const messagesRef =
+    ref(
+        db,
+        "messages/" + id
+    );
+
+
+if (messagesListener)
+    messagesListener();
+
+
+messagesListener =
+    onValue(
+        messagesRef,
+        snapshot => {
+
+            const data =
+                snapshot.val() || {};
+
+
+            renderMessages(
+                Object.values(data)
+            );
+
+        }
+    );
+
+}
+
+function renderMessages(
+messages
+) {
+
+const box =
+    document.getElementById(
+        "chatBox"
+    );
+
+
+box.innerHTML = "";
+
+
+messages
+    .sort(
+        (a, b) =>
+            (a.createdAt || 0) -
+            (b.createdAt || 0)
+    )
+    .forEach(message => {
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+
+        div.className =
+            message.senderUid ===
+            currentUser.uid
+                ? "msg sent"
+                : "msg received";
+
+
+        div.textContent =
+            message.text;
+
+
+        box.appendChild(div);
+
+    });
+
+
+box.scrollTop =
+    box.scrollHeight;
+
+}
+
+async function sendMessage() {
+
+const input =
+    document.getElementById(
+        "chatInput"
+    );
+
+
+const text =
+    input.value.trim();
+
+
+if (
+    !text ||
+    !activeChatReceiver
+)
+    return;
+
+
+const id =
+    chatId(
+        currentUser.uid,
+        activeChatReceiver
+    );
+
+
+const messageRef =
+    push(
+        ref(
+            db,
+            "messages/" + id
+        )
+    );
+
+
+await set(
+    messageRef,
+    {
+
+        senderUid:
+            currentUser.uid,
+
+        receiverUid:
+            activeChatReceiver,
+
+        text:
+            text,
+
+        createdAt:
+            Date.now()
+
+    }
+);
+
+
+input.value = "";
+
+}
+
+/* ================= FILE ================= */
+
+function showFileName() {
+
+const file =
+    document
+        .getElementById(
+            "mediaInput"
+        )
+        .files[0];
+
+
+document
+    .getElementById(
+        "fileNameDisplay"
+    )
+    .textContent =
+    file
+        ? file.name
+        : "";
+
+            }
