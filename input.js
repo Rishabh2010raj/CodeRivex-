@@ -1,4 +1,9 @@
 import {
+initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getAuth,
 createUserWithEmailAndPassword,
 signInWithEmailAndPassword,
 onAuthStateChanged,
@@ -6,102 +11,212 @@ signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
+getDatabase,
 ref,
 set,
 push,
 get,
 onValue,
-update,
 remove
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-/* ================= VARIABLES ================= */
+/* =====================================================
+FIREBASE CONFIG
+===================================================== */
 
-const auth = window.firebaseAuth;
-const db = window.firebaseDB;
+const firebaseConfig = {
+
+apiKey:
+    "AIzaSyBoU-pijNz9S-9v2OyLxArGYkZVtuc95fA",
+
+authDomain:
+    "hacker-book.firebaseapp.com",
+
+databaseURL:
+    "https://hacker-book-default-rtdb.firebaseio.com",
+
+projectId:
+    "hacker-book",
+
+storageBucket:
+    "hacker-book.firebasestorage.app",
+
+messagingSenderId:
+    "341319299799",
+
+appId:
+    "1:341319299799:web:77e386f68b153cc4e3f692",
+
+measurementId:
+    "G-BL9YZRFJEM"
+
+};
+
+/* =====================================================
+INITIALIZE FIREBASE
+===================================================== */
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getDatabase(app);
+
+/* =====================================================
+GLOBAL VARIABLES
+===================================================== */
 
 let currentUser = null;
+
 let currentUsername = "";
+
 let activeChatReceiver = "";
-let activeChatUsername = "";
 
-let unsubscribePosts = null;
-let unsubscribeUsers = null;
-let unsubscribeMessages = null;
+let postsListener = null;
 
-/* ================= ELEMENTS ================= */
+let usersListener = null;
 
-const authSection =
-document.getElementById("authSection");
+let messagesListener = null;
 
-const appSection =
-document.getElementById("appSection");
+/* =====================================================
+PAGE LOAD
+===================================================== */
 
-const authEmail =
-document.getElementById("authEmail");
+document.addEventListener(
+"DOMContentLoaded",
+() => {
 
-const authPassword =
-document.getElementById("authPassword");
-
-const authError =
-document.getElementById("authError");
-
-/* ================= AUTH STATE ================= */
-
-onAuthStateChanged(auth, async (user) => {
-
-if (user) {
-
-    currentUser = user;
-
-    const usernameSnap =
-        await get(
-            ref(
-                db,
-                "users/" + user.uid + "/username"
-            )
-        );
-
-    if (usernameSnap.exists()) {
-
-        currentUsername =
-            usernameSnap.val();
-
-    } else {
-
-        currentUsername =
-            user.email.split("@")[0];
-
-    }
-
-    showApp();
-
-} else {
-
-    currentUser = null;
-    currentUsername = "";
-
-    showLogin();
+    setupButtons();
 
 }
 
-});
+);
 
-/* ================= LOGIN ================= */
+/* =====================================================
+BUTTON SETUP
+===================================================== */
+
+function setupButtons() {
+
+document
+    .getElementById("loginBtn")
+    .addEventListener(
+        "click",
+        loginUser
+    );
+
+
+document
+    .getElementById("registerBtn")
+    .addEventListener(
+        "click",
+        registerUser
+    );
+
+
+document
+    .getElementById("logoutBtn")
+    .addEventListener(
+        "click",
+        logout
+    );
+
+
+document
+    .getElementById("navFeed")
+    .addEventListener(
+        "click",
+        () => switchTab("feed")
+    );
+
+
+document
+    .getElementById("navUsers")
+    .addEventListener(
+        "click",
+        () => switchTab("users")
+    );
+
+
+document
+    .getElementById("navChat")
+    .addEventListener(
+        "click",
+        () => switchTab("chat")
+    );
+
+
+document
+    .getElementById("postBtn")
+    .addEventListener(
+        "click",
+        createPost
+    );
+
+
+document
+    .getElementById("sendBtn")
+    .addEventListener(
+        "click",
+        sendMessage
+    );
+
+
+document
+    .getElementById("backChatBtn")
+    .addEventListener(
+        "click",
+        closeChat
+    );
+
+
+document
+    .getElementById("chatInput")
+    .addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Enter") {
+
+                sendMessage();
+
+            }
+
+        }
+    );
+
+
+document
+    .getElementById("mediaInput")
+    .addEventListener(
+        "change",
+        showFileName
+    );
+
+}
+
+/* =====================================================
+LOGIN
+===================================================== */
 
 async function loginUser() {
 
 const email =
-    authEmail.value.trim();
+    document
+        .getElementById("authEmail")
+        .value
+        .trim();
 
 const password =
-    authPassword.value.trim();
+    document
+        .getElementById("authPassword")
+        .value;
 
 
 if (!email || !password) {
 
     showError(
-        "Email और Password भरें!"
+        "Email और Password दोनों भरें!"
     );
 
     return;
@@ -121,28 +236,35 @@ try {
 } catch (error) {
 
     showError(
-        firebaseError(error.code)
+        getErrorMessage(error.code)
     );
 
 }
 
 }
 
-/* ================= REGISTER ================= */
+/* =====================================================
+REGISTER
+===================================================== */
 
 async function registerUser() {
 
 const email =
-    authEmail.value.trim();
+    document
+        .getElementById("authEmail")
+        .value
+        .trim();
 
 const password =
-    authPassword.value.trim();
+    document
+        .getElementById("authPassword")
+        .value;
 
 
 if (!email || !password) {
 
     showError(
-        "Email और Password भरें!"
+        "Email और Password दोनों भरें!"
     );
 
     return;
@@ -170,23 +292,30 @@ try {
 
 
     const username =
-        email.split("@")[0];
+        email
+            .split("@")[0]
+            .replace(/[^a-zA-Z0-9_]/g, "");
 
 
     await set(
         ref(
             db,
-            "users/" + result.user.uid
+            "users/" +
+            result.user.uid
         ),
         {
 
-            uid: result.user.uid,
+            uid:
+                result.user.uid,
 
-            username: username,
+            username:
+                username,
 
-            email: email,
+            email:
+                email,
 
-            createdAt: Date.now()
+            createdAt:
+                Date.now()
 
         }
     );
@@ -197,78 +326,166 @@ try {
 } catch (error) {
 
     showError(
-        firebaseError(error.code)
+        getErrorMessage(error.code)
     );
 
 }
 
 }
 
-/* ================= LOGOUT ================= */
+/* =====================================================
+AUTH STATE
+===================================================== */
+
+onAuthStateChanged(
+auth,
+async user => {
+
+    if (user) {
+
+        currentUser = user;
+
+
+        const usernameSnapshot =
+            await get(
+                ref(
+                    db,
+                    "users/" +
+                    user.uid +
+                    "/username"
+                )
+            );
+
+
+        if (
+            usernameSnapshot.exists()
+        ) {
+
+            currentUsername =
+                usernameSnapshot.val();
+
+        } else {
+
+            currentUsername =
+                user.email
+                    .split("@")[0];
+
+        }
+
+
+        document
+            .getElementById(
+                "authSection"
+            )
+            .classList
+            .add("hidden");
+
+
+        document
+            .getElementById(
+                "appSection"
+            )
+            .classList
+            .remove("hidden");
+
+
+        switchTab("feed");
+
+    } else {
+
+        currentUser = null;
+
+        currentUsername = "";
+
+        document
+            .getElementById(
+                "authSection"
+            )
+            .classList
+            .remove("hidden");
+
+
+        document
+            .getElementById(
+                "appSection"
+            )
+            .classList
+            .add("hidden");
+
+    }
+
+}
+
+);
+
+/* =====================================================
+LOGOUT
+===================================================== */
 
 async function logout() {
 
-if (unsubscribePosts)
-    unsubscribePosts();
+if (postsListener)
+    postsListener();
 
-if (unsubscribeUsers)
-    unsubscribeUsers();
+if (usersListener)
+    usersListener();
 
-if (unsubscribeMessages)
-    unsubscribeMessages();
+if (messagesListener)
+    messagesListener();
 
 
-await signOut(auth);
+postsListener = null;
+
+usersListener = null;
+
+messagesListener = null;
 
 activeChatReceiver = "";
 
-}
-
-/* ================= AUTH UI ================= */
-
-function showLogin() {
-
-authSection.classList.remove("hidden");
-
-appSection.classList.add("hidden");
+await signOut(auth);
 
 }
 
-function showApp() {
-
-authSection.classList.add("hidden");
-
-appSection.classList.remove("hidden");
-
-switchTab("feed");
-
-}
+/* =====================================================
+ERROR
+===================================================== */
 
 function showError(message) {
 
-authError.textContent = message;
+const error =
+    document.getElementById(
+        "authError"
+    );
 
-authError.classList.remove("hidden");
+error.textContent =
+    message;
+
+error.classList.remove(
+    "hidden"
+);
 
 }
 
 function hideError() {
 
-authError.classList.add("hidden");
+document
+    .getElementById(
+        "authError"
+    )
+    .classList
+    .add("hidden");
 
 }
 
-/* ================= ERROR MESSAGES ================= */
-
-function firebaseError(code) {
+function getErrorMessage(code) {
 
 switch (code) {
 
     case "auth/invalid-email":
-        return "Email सही नहीं है!";
+        return "Email गलत है!";
 
     case "auth/user-not-found":
-        return "यह account मौजूद नहीं है!";
+        return "यह account नहीं मिला!";
 
     case "auth/wrong-password":
         return "Password गलत है!";
@@ -280,7 +497,10 @@ switch (code) {
         return "यह Email पहले से registered है!";
 
     case "auth/weak-password":
-        return "Password बहुत कमजोर है!";
+        return "Password कम से कम 6 characters का रखें!";
+
+    case "auth/network-request-failed":
+        return "Internet connection check करें!";
 
     default:
         return "Error: " + code;
@@ -288,28 +508,36 @@ switch (code) {
 
 }
 
-/* ================= TABS ================= */
+/* =====================================================
+TABS
+===================================================== */
 
 function switchTab(tab) {
 
 document
     .getElementById("feedView")
-    .classList.add("hidden");
+    .classList
+    .add("hidden");
+
 
 document
     .getElementById("usersView")
-    .classList.add("hidden");
+    .classList
+    .add("hidden");
+
 
 document
     .getElementById("chatView")
-    .classList.add("hidden");
+    .classList
+    .add("hidden");
 
 
 if (tab === "feed") {
 
     document
         .getElementById("feedView")
-        .classList.remove("hidden");
+        .classList
+        .remove("hidden");
 
     listenPosts();
 
@@ -320,7 +548,8 @@ if (tab === "users") {
 
     document
         .getElementById("usersView")
-        .classList.remove("hidden");
+        .classList
+        .remove("hidden");
 
     listenUsers();
 
@@ -331,7 +560,8 @@ if (tab === "chat") {
 
     document
         .getElementById("chatView")
-        .classList.remove("hidden");
+        .classList
+        .remove("hidden");
 
     closeChat();
 
@@ -341,7 +571,9 @@ if (tab === "chat") {
 
 }
 
-/* ================= USERS ================= */
+/* =====================================================
+USERS
+===================================================== */
 
 function listenUsers() {
 
@@ -349,14 +581,14 @@ const usersRef =
     ref(db, "users");
 
 
-if (unsubscribeUsers)
-    unsubscribeUsers();
+if (usersListener)
+    usersListener();
 
 
-unsubscribeUsers =
+usersListener =
     onValue(
         usersRef,
-        (snapshot) => {
+        snapshot => {
 
             renderUsers(
                 snapshot.val() || {}
@@ -367,7 +599,7 @@ unsubscribeUsers =
 
 }
 
-function renderUsers(users) {
+async function renderUsers(users) {
 
 const container =
     document.getElementById(
@@ -377,54 +609,98 @@ const container =
 container.innerHTML = "";
 
 
-Object.entries(users).forEach(
-    ([uid, user]) => {
-
-        if (uid === currentUser.uid)
-            return;
+const userEntries =
+    Object.entries(users);
 
 
-        const row =
-            document.createElement("div");
+for (
+    const [uid, user]
+    of userEntries
+) {
 
-        row.className =
-            "user-row";
-
-
-        const name =
-            document.createElement("span");
-
-        name.className =
-            "user-name";
-
-        name.textContent =
-            "👤 @" + user.username;
+    if (
+        !currentUser ||
+        uid === currentUser.uid
+    ) {
+        continue;
+    }
 
 
-        const button =
-            document.createElement("button");
-
-        button.className =
-            "follow-btn";
-
-        button.textContent =
-            "Loading...";
-
-
-        row.appendChild(name);
-
-        row.appendChild(button);
-
-        container.appendChild(row);
-
-
-        checkFollowing(
-            uid,
-            button
+    const row =
+        document.createElement(
+            "div"
         );
 
-    }
-);
+    row.className =
+        "user-row";
+
+
+    const name =
+        document.createElement(
+            "span"
+        );
+
+    name.className =
+        "user-name";
+
+    name.textContent =
+        "👤 @" +
+        user.username;
+
+
+    const button =
+        document.createElement(
+            "button"
+        );
+
+    button.className =
+        "follow-btn";
+
+    button.textContent =
+        "Loading...";
+
+
+    row.appendChild(name);
+
+    row.appendChild(button);
+
+    container.appendChild(row);
+
+
+    const followRef =
+        ref(
+            db,
+            "follows/" +
+            currentUser.uid +
+            "/" +
+            uid
+        );
+
+
+    const followSnapshot =
+        await get(followRef);
+
+
+    const following =
+        followSnapshot.exists();
+
+
+    updateFollowButton(
+        button,
+        following
+    );
+
+
+    button.addEventListener(
+        "click",
+        () =>
+            toggleFollow(
+                uid,
+                button
+            )
+    );
+
+}
 
 
 if (
@@ -438,58 +714,9 @@ if (
 
 }
 
-/* ================= FOLLOW ================= */
-
-async function checkFollowing(
-targetUid,
-button
-) {
-
-const followRef =
-    ref(
-        db,
-        "follows/" +
-        currentUser.uid +
-        "/" +
-        targetUid
-    );
-
-
-const snapshot =
-    await get(followRef);
-
-
-updateFollowButton(
-    button,
-    snapshot.exists()
-);
-
-
-button.onclick =
-    () => toggleFollow(
-        targetUid,
-        button
-    );
-
-}
-
-function updateFollowButton(
-button,
-following
-) {
-
-button.textContent =
-    following
-        ? "✔ Following"
-        : "+ Follow";
-
-
-button.classList.toggle(
-    "following",
-    following
-);
-
-}
+/* =====================================================
+FOLLOW
+===================================================== */
 
 async function toggleFollow(
 targetUid,
@@ -530,11 +757,32 @@ if (snapshot.exists()) {
         button,
         true
     );
-}
 
 }
 
-/* ================= POSTS ================= */
+}
+
+function updateFollowButton(
+button,
+following
+) {
+
+button.textContent =
+    following
+        ? "✔ Following"
+        : "+ Follow";
+
+
+button.classList.toggle(
+    "following",
+    following
+);
+
+}
+
+/* =====================================================
+POSTS - REALTIME
+===================================================== */
 
 function listenPosts() {
 
@@ -542,11 +790,11 @@ const postsRef =
     ref(db, "posts");
 
 
-if (unsubscribePosts)
-    unsubscribePosts();
+if (postsListener)
+    postsListener();
 
 
-unsubscribePosts =
+postsListener =
     onValue(
         postsRef,
         snapshot => {
@@ -557,17 +805,17 @@ unsubscribePosts =
 
             const posts =
                 Object.entries(data)
-                .map(
-                    ([id, post]) => ({
-                        id,
-                        ...post
-                    })
-                )
-                .sort(
-                    (a, b) =>
-                        (b.createdAt || 0) -
-                        (a.createdAt || 0)
-                );
+                    .map(
+                        ([id, post]) => ({
+                            id,
+                            ...post
+                        })
+                    )
+                    .sort(
+                        (a, b) =>
+                            (b.createdAt || 0) -
+                            (a.createdAt || 0)
+                    );
 
 
             renderPosts(posts);
@@ -577,19 +825,27 @@ unsubscribePosts =
 
 }
 
+/* =====================================================
+CREATE POST
+===================================================== */
+
 async function createPost() {
 
+const input =
+    document.getElementById(
+        "postInput"
+    );
+
+
 const text =
-    document
-        .getElementById("postInput")
-        .value
-        .trim();
+    input.value.trim();
 
 
 const fileInput =
     document.getElementById(
         "mediaInput"
     );
+
 
 const file =
     fileInput.files[0];
@@ -598,61 +854,73 @@ const file =
 if (!text && !file) {
 
     alert(
-        "कुछ Text या Photo/Video डालें!"
+        "कुछ लिखें या Photo/Video select करें!"
     );
 
     return;
 }
 
-
-/*
- * इस basic Firebase version में
- * text posts सीधे database में जाते हैं।
- */
 
 if (file) {
 
     alert(
-        "Photo/Video upload के लिए Firebase Storage भी enable करना होगा। अभी Text Post इस्तेमाल करें।"
+        "अभी Text Post इस्तेमाल करें। Photo/Video के लिए Firebase Storage जोड़ना होगा।"
     );
 
     return;
 }
 
 
-const postRef =
-    push(ref(db, "posts"));
+try {
+
+    const postRef =
+        push(
+            ref(db, "posts")
+        );
 
 
-await set(
-    postRef,
-    {
+    await set(
+        postRef,
+        {
 
-        authorUid:
-            currentUser.uid,
+            authorUid:
+                currentUser.uid,
 
-        author:
-            currentUsername,
+            author:
+                currentUsername,
 
-        content:
-            text,
+            content:
+                text,
 
-        createdAt:
-            Date.now(),
+            createdAt:
+                Date.now(),
 
-        likes: {},
+            likes:
+                {},
 
-        comments: {}
+            comments:
+                {}
 
-    }
-);
+        }
+    );
 
 
-document
-    .getElementById("postInput")
-    .value = "";
+    input.value = "";
+
+} catch (error) {
+
+    alert(
+        "Post बनाने में problem: " +
+        error.message
+    );
 
 }
+
+}
+
+/* =====================================================
+RENDER POSTS
+===================================================== */
 
 function renderPosts(posts) {
 
@@ -661,16 +929,19 @@ const container =
         "postsContainer"
     );
 
+
 container.innerHTML = "";
 
 
 if (posts.length === 0) {
 
     container.innerHTML =
-        `<div class="card"
-         style="text-align:center;color:#65676b">
-         अभी कोई post नहीं है 🚀
-         </div>`;
+        `
+        <div class="card"
+             style="text-align:center;color:#65676b">
+            अभी कोई post नहीं है 🚀
+        </div>
+        `;
 
     return;
 }
@@ -679,24 +950,35 @@ if (posts.length === 0) {
 posts.forEach(post => {
 
     const card =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     card.className =
         "card";
 
 
+    /* AUTHOR */
+
     const author =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     author.className =
         "post-author";
 
     author.textContent =
-        "@" + post.author;
+        "@" +
+        post.author;
 
+
+    /* TIME */
 
     const time =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     time.className =
         "post-time";
@@ -707,8 +989,12 @@ posts.forEach(post => {
         ).toLocaleString();
 
 
+    /* CONTENT */
+
     const content =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     content.className =
         "post-content";
@@ -724,17 +1010,21 @@ posts.forEach(post => {
     card.appendChild(content);
 
 
-    /* LIKE */
+    /* ACTIONS */
 
     const actions =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     actions.className =
         "post-actions";
 
 
     const likeButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
     likeButton.className =
         "like-btn";
@@ -744,12 +1034,17 @@ posts.forEach(post => {
         post.likes || {};
 
 
-    const liked =
-        likes[currentUser.uid];
+    const isLiked =
+        !!likes[currentUser.uid];
 
 
-    if (liked)
-        likeButton.classList.add("liked");
+    if (isLiked) {
+
+        likeButton.classList.add(
+            "liked"
+        );
+
+    }
 
 
     likeButton.textContent =
@@ -758,12 +1053,14 @@ posts.forEach(post => {
         ")";
 
 
-    likeButton.onclick =
+    likeButton.addEventListener(
+        "click",
         () =>
             toggleLike(
                 post.id,
-                liked
-            );
+                isLiked
+            )
+    );
 
 
     actions.appendChild(
@@ -776,7 +1073,9 @@ posts.forEach(post => {
     /* COMMENTS */
 
     const commentBox =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     commentBox.className =
         "comment-box";
@@ -787,77 +1086,110 @@ posts.forEach(post => {
 
 
     Object.values(comments)
-        .forEach(comment => {
+        .sort(
+            (a, b) =>
+                (a.createdAt || 0) -
+                (b.createdAt || 0)
+        )
+        .forEach(
+            comment => {
 
-            const item =
-                document.createElement("div");
+                const item =
+                    document.createElement(
+                        "div"
+                    );
 
-            item.className =
-                "comment-item";
+                item.className =
+                    "comment-item";
 
-            item.textContent =
-                "@" +
-                comment.author +
-                ": " +
-                comment.text;
+                item.textContent =
+                    "@" +
+                    comment.author +
+                    ": " +
+                    comment.text;
 
-            commentBox.appendChild(item);
+                commentBox.appendChild(
+                    item
+                );
 
-        });
+            }
+        );
 
 
-    const inputArea =
-        document.createElement("div");
+    const commentArea =
+        document.createElement(
+            "div"
+        );
 
-    inputArea.className =
+    commentArea.className =
         "comment-input-area";
 
 
-    const input =
-        document.createElement("input");
+    const commentInput =
+        document.createElement(
+            "input"
+        );
 
-    input.placeholder =
+    commentInput.placeholder =
         "Write a comment...";
 
 
-    const reply =
-        document.createElement("button");
+    const replyButton =
+        document.createElement(
+            "button"
+        );
 
-    reply.className =
+    replyButton.className =
         "reply-btn";
 
-    reply.textContent =
+    replyButton.textContent =
         "Reply";
 
 
-    reply.onclick =
+    replyButton.addEventListener(
+        "click",
         () =>
             addComment(
                 post.id,
-                input
-            );
+                commentInput
+            )
+    );
 
 
-    inputArea.appendChild(input);
+    commentArea.appendChild(
+        commentInput
+    );
 
-    inputArea.appendChild(reply);
-
-    commentBox.appendChild(inputArea);
-
-    card.appendChild(commentBox);
+    commentArea.appendChild(
+        replyButton
+    );
 
 
-    container.appendChild(card);
+    commentBox.appendChild(
+        commentArea
+    );
+
+
+    card.appendChild(
+        commentBox
+    );
+
+
+    container.appendChild(
+        card
+    );
 
 });
 
 }
 
-/* ================= LIKE ================= */
+/* =====================================================
+LIKE
+===================================================== */
 
 async function toggleLike(
 postId,
-liked
+isLiked
 ) {
 
 const likeRef =
@@ -870,7 +1202,7 @@ const likeRef =
     );
 
 
-if (liked) {
+if (isLiked) {
 
     await remove(likeRef);
 
@@ -885,7 +1217,9 @@ if (liked) {
 
 }
 
-/* ================= COMMENT ================= */
+/* =====================================================
+COMMENT
+===================================================== */
 
 async function addComment(
 postId,
@@ -935,7 +1269,9 @@ input.value = "";
 
 }
 
-/* ================= FRIENDS ================= */
+/* =====================================================
+FRIENDS / CHAT USERS
+===================================================== */
 
 function listenFriends() {
 
@@ -955,14 +1291,17 @@ onValue(
             snapshot.val() || {};
 
 
-        const usersSnap =
+        const usersSnapshot =
             await get(
-                ref(db, "users")
+                ref(
+                    db,
+                    "users"
+                )
             );
 
 
         const users =
-            usersSnap.val() || {};
+            usersSnapshot.val() || {};
 
 
         renderFriends(
@@ -985,334 +1324,35 @@ const container =
         "friendsContainer"
     );
 
+
 container.innerHTML = "";
 
 
 Object.keys(following)
-    .forEach(uid => {
+    .forEach(
+        uid => {
 
-        if (!users[uid])
-            return;
-
-
-        const row =
-            document.createElement("div");
-
-        row.className =
-            "user-row";
+            if (!users[uid])
+                return;
 
 
-        const name =
-            document.createElement("b");
-
-        name.textContent =
-            "👤 @" +
-            users[uid].username;
-
-
-        const button =
-            document.createElement("button");
-
-        button.className =
-            "chat-btn";
-
-        button.textContent =
-            "Chat";
-
-
-        button.onclick =
-            () =>
-                openChat(
-                    uid,
-                    users[uid].username
+            const row =
+                document.createElement(
+                    "div"
                 );
 
-
-        row.appendChild(name);
-
-        row.appendChild(button);
-
-        container.appendChild(row);
-
-    });
+            row.className =
+                "user-row";
 
 
-if (!container.children.length) {
-
-    container.innerHTML =
-        "<p>किसी user को Follow करें, फिर Chat कर सकते हैं।</p>";
-
-}
-
-}
-
-/* ================= CHAT ================= */
-
-function openChat(
-uid,
-username
-) {
-
-activeChatReceiver =
-    uid;
-
-activeChatUsername =
-    username;
-
-
-document
-    .getElementById(
-        "userListCard"
-    )
-    .classList.add("hidden");
-
-
-document
-    .getElementById(
-        "activeChatCard"
-    )
-    .classList.remove("hidden");
-
-
-document
-    .getElementById(
-        "chatWithTitle"
-    )
-    .textContent =
-    "Chat with @" +
-    username;
-
-
-listenMessages();
-
-}
-
-function closeChat() {
-
-activeChatReceiver = "";
-
-document
-    .getElementById(
-        "activeChatCard"
-    )
-    .classList.add("hidden");
-
-
-document
-    .getElementById(
-        "userListCard"
-    )
-    .classList.remove("hidden");
-
-
-if (unsubscribeMessages) {
-
-    unsubscribeMessages();
-
-    unsubscribeMessages = null;
-
-}
-
-}
-
-/* ================= MESSAGES ================= */
-
-function getChatId(
-uid1,
-uid2
-) {
-
-return [uid1, uid2]
-    .sort()
-    .join("_");
-
-}
-
-function listenMessages() {
-
-if (!activeChatReceiver)
-    return;
-
-
-const chatId =
-    getChatId(
-        currentUser.uid,
-        activeChatReceiver
-    );
-
-
-const messagesRef =
-    ref(
-        db,
-        "messages/" +
-        chatId
-    );
-
-
-if (unsubscribeMessages)
-    unsubscribeMessages();
-
-
-unsubscribeMessages =
-    onValue(
-        messagesRef,
-        snapshot => {
-
-            const data =
-                snapshot.val() || {};
-
-
-            const messages =
-                Object.values(data)
-                .sort(
-                    (a, b) =>
-                        (a.createdAt || 0) -
-                        (b.createdAt || 0)
+            const name =
+                document.createElement(
+                    "span"
                 );
 
+            name.className =
+                "user-name";
 
-            renderMessages(
-                messages
-            );
-
-        }
-    );
-
-}
-
-function renderMessages(messages) {
-
-const box =
-    document.getElementById(
-        "chatBox"
-    );
-
-box.innerHTML = "";
-
-
-if (!messages.length) {
-
-    box.innerHTML =
-        `<div style="text-align:center;color:#65676b">
-         No messages yet 👋
-         </div>`;
-
-    return;
-}
-
-
-messages.forEach(message => {
-
-    const div =
-        document.createElement("div");
-
-
-    div.className =
-        "msg " +
-        (
-            message.senderUid ===
-            currentUser.uid
-                ? "sent"
-                : "received"
-        );
-
-
-    div.textContent =
-        message.text;
-
-
-    box.appendChild(div);
-
-});
-
-
-box.scrollTop =
-    box.scrollHeight;
-
-}
-
-async function sendMessage() {
-
-const input =
-    document.getElementById(
-        "chatInput"
-    );
-
-
-const text =
-    input.value.trim();
-
-
-if (
-    !text ||
-    !activeChatReceiver
-)
-    return;
-
-
-const chatId =
-    getChatId(
-        currentUser.uid,
-        activeChatReceiver
-    );
-
-
-const messageRef =
-    push(
-        ref(
-            db,
-            "messages/" +
-            chatId
-        )
-    );
-
-
-await set(
-    messageRef,
-    {
-
-        senderUid:
-            currentUser.uid,
-
-        sender:
-            currentUsername,
-
-        receiverUid:
-            activeChatReceiver,
-
-        text:
-            text,
-
-        createdAt:
-            Date.now()
-
-    }
-);
-
-
-input.value = "";
-
-}
-
-/* ================= FILE NAME ================= */
-
-document
-.getElementById("mediaInput")
-.addEventListener(
-"change",
-function () {
-
-        const file =
-            this.files[0];
-
-        document
-            .getElementById(
-                "fileNameDisplay"
-            )
-            .textContent =
-            file
-                ? file.name
-                : "";
-
-    }
-);
+            name.textContent =
+                "👤 @" +
+                users[uid].u
